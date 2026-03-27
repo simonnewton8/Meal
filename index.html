@@ -2,25 +2,78 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Button Test</title>
+  <title>Supabase Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-    .card { background: white; padding: 16px; border-radius: 10px; max-width: 500px; margin: 40px auto; }
-    button { width: 100%; padding: 14px; margin-top: 10px; }
-    #msg { margin-top: 12px; font-size: 18px; }
+    .card { background: white; padding: 16px; border-radius: 10px; max-width: 520px; margin: 40px auto; }
+    input, button { width: 100%; padding: 12px; margin-top: 10px; box-sizing: border-box; }
+    #msg { margin-top: 12px; white-space: pre-wrap; font-size: 16px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>Button Test</h2>
-    <button id="testBtn" type="button">Press me</button>
+    <h2>Supabase Test</h2>
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button id="loginBtn" type="button">Login</button>
     <div id="msg">Page loaded.</div>
   </div>
 
   <script>
-    document.getElementById("testBtn").addEventListener("click", function () {
-      document.getElementById("msg").textContent = "Button works.";
-      alert("Button works");
+    const msg = document.getElementById("msg");
+
+    msg.textContent += "\nScript started.";
+
+    if (!window.supabase) {
+      msg.textContent += "\nSupabase library did NOT load.";
+    } else {
+      msg.textContent += "\nSupabase library loaded.";
+    }
+
+    const SUPABASE_URL = "https://njhgiitbtvsbudarsmbk.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_AHbuYoScuVzZ6jgAkQMMpg_eZRPn6v0";
+
+    let client = null;
+
+    try {
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      msg.textContent += "\nClient created.";
+    } catch (err) {
+      msg.textContent += "\nClient creation failed: " + err.message;
+    }
+
+    document.getElementById("loginBtn").addEventListener("click", async function () {
+      msg.textContent += "\nLogin button pressed.";
+
+      if (!client) {
+        msg.textContent += "\nNo client available.";
+        return;
+      }
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!email || !password) {
+        msg.textContent += "\nEnter email and password.";
+        return;
+      }
+
+      try {
+        const { data, error } = await client.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          msg.textContent += "\nLogin failed: " + error.message;
+          return;
+        }
+
+        msg.textContent += "\nLogin worked for: " + (data.user?.email || "unknown user");
+      } catch (err) {
+        msg.textContent += "\nRequest error: " + err.message;
+      }
     });
   </script>
 </body>
