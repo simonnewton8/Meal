@@ -16,29 +16,24 @@ button { border:none; border-radius:8px; cursor:pointer;}
 .medium { background:#fef3c7;}
 .high { background:#fee2e2;}
 .hidden { display:none;}
-.small { font-size:12px;}
-.actions { margin-top:8px; display:flex; gap:6px;}
-.actions button { flex:1;}
+.nav { display:flex; gap:5px;}
+.nav button { flex:1;}
 </style>
 </head>
 
 <body>
 <div class="wrap">
 
-<!-- LOGIN -->
-<div id="loginBox" class="card">
-<h3>Login</h3>
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
-<button id="loginBtn">Login</button>
-<div id="msg"></div>
+<div class="nav card">
+<button onclick="show('meals')">Meals</button>
+<button onclick="show('week')">Week</button>
+<button onclick="show('shop')">Shop</button>
 </div>
 
-<!-- APP -->
-<div id="app" class="hidden">
+<div id="meals">
 
 <div class="card">
-<h3>Add / Edit Meal</h3>
+<h3>Add Meal</h3>
 
 <input id="title" placeholder="Meal name">
 
@@ -49,16 +44,14 @@ button { border:none; border-radius:8px; cursor:pointer;}
 </select>
 
 <input id="tagInput" placeholder="Tag">
-<button id="addTagBtn">Add Tag</button>
+<button onclick="addTag()">Add Tag</button>
 <div id="tags"></div>
 
 <input id="ingredientInput" placeholder="Ingredient">
-<button id="addIngredientBtn">Add Ingredient</button>
+<button onclick="addIngredient()">Add Ingredient</button>
 <div id="ingredients"></div>
 
-<button id="saveMealBtn">Save Meal</button>
-<button id="cancelEditBtn" class="hidden">Cancel Edit</button>
-
+<button onclick="saveMeal()">Save Meal</button>
 </div>
 
 <div class="card">
@@ -66,6 +59,25 @@ button { border:none; border-radius:8px; cursor:pointer;}
 <div id="mealList"></div>
 </div>
 
+</div>
+
+<div id="week" class="hidden">
+<div class="card">
+<button onclick="generateWeek()">Generate Week</button>
+<div id="weekList"></div>
+</div>
+</div>
+
+<div id="shop" class="hidden">
+<div class="card">
+<h3>Shopping List</h3>
+<div id="shopList"></div>
+
+<input id="extraItem" placeholder="Extra item">
+<button onclick="addExtra()">Add</button>
+<div id="extraList"></div>
+
+</div>
 </div>
 
 </div>
@@ -76,186 +88,134 @@ const supabase = window.supabase.createClient(
 "sb_publishable_AHbuYoScuVzZ6jgAkQMMpg_eZRPn6v0"
 );
 
-// STATE
 let tags = [];
 let ingredients = [];
 let meals = [];
-let editingId = null;
+let week = [];
+let extras = [];
 
-// ELEMENTS
-const loginBox = document.getElementById("loginBox");
-const app = document.getElementById("app");
-const msg = document.getElementById("msg");
-
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
-
-const titleInput = document.getElementById("title");
-const costInput = document.getElementById("cost");
-
-const tagInput = document.getElementById("tagInput");
-const ingredientInput = document.getElementById("ingredientInput");
-
-const tagsDiv = document.getElementById("tags");
-const ingredientsDiv = document.getElementById("ingredients");
-
-const mealList = document.getElementById("mealList");
-
-const saveBtn = document.getElementById("saveMealBtn");
-const cancelEditBtn = document.getElementById("cancelEditBtn");
-
-// LOGIN
-document.getElementById("loginBtn").addEventListener("click", async () => {
-  const { error } = await supabase.auth.signInWithPassword({
-    email: emailInput.value,
-    password: passwordInput.value
-  });
-
-  if (error) {
-    msg.textContent = error.message;
-    return;
-  }
-
-  loginBox.classList.add("hidden");
-  app.classList.remove("hidden");
-  loadMeals();
-});
-
-// TAGS
-document.getElementById("addTagBtn").addEventListener("click", () => {
-  if (!tagInput.value) return;
-  if (tags.length >= 2) {
-    alert("Max 2 tags");
-    return;
-  }
-  tags.push(tagInput.value);
-  tagInput.value = "";
-  renderTags();
-});
-
-function renderTags() {
-  tagsDiv.innerHTML = "";
-  tags.forEach((t, i) => {
-    tagsDiv.innerHTML += `<span class="tag">${t} <button onclick="removeTag(${i})">x</button></span>`;
-  });
+// NAV
+function show(s){
+document.getElementById("meals").classList.add("hidden");
+document.getElementById("week").classList.add("hidden");
+document.getElementById("shop").classList.add("hidden");
+document.getElementById(s).classList.remove("hidden");
 }
 
-window.removeTag = function(i) {
-  tags.splice(i,1);
-  renderTags();
+// TAGS
+function addTag(){
+if(!tagInput.value) return;
+if(tags.length >= 2) return alert("Max 2 tags");
+tags.push(tagInput.value);
+tagInput.value="";
+renderTags();
+}
+function renderTags(){
+tagsDiv.innerHTML = tags.map(t=>`<span class="tag">${t}</span>`).join("");
 }
 
 // INGREDIENTS
-document.getElementById("addIngredientBtn").addEventListener("click", () => {
-  if (!ingredientInput.value) return;
-  ingredients.push(ingredientInput.value);
-  ingredientInput.value = "";
-  renderIngredients();
+function addIngredient(){
+if(!ingredientInput.value) return;
+ingredients.push(ingredientInput.value);
+ingredientInput.value="";
+renderIngredients();
+}
+function renderIngredients(){
+ingredientsDiv.innerHTML = ingredients.map(i=>`<span class="tag">${i}</span>`).join("");
+}
+
+// SAVE MEAL
+async function saveMeal(){
+if(!title.value || ingredients.length === 0){
+alert("Add title + ingredients");
+return;
+}
+
+await supabase.from("meals").insert({
+title:title.value,
+cost_band:cost.value,
+tags:tags,
+ingredients:ingredients
 });
 
-function renderIngredients() {
-  ingredientsDiv.innerHTML = "";
-  ingredients.forEach((ing, i) => {
-    ingredientsDiv.innerHTML += `<span class="tag">${ing} <button onclick="removeIngredient(${i})">x</button></span>`;
-  });
+title.value="";
+tags=[];
+ingredients=[];
+renderTags();
+renderIngredients();
+loadMeals();
 }
 
-window.removeIngredient = function(i) {
-  ingredients.splice(i,1);
-  renderIngredients();
+// LOAD MEALS
+async function loadMeals(){
+const {data}=await supabase.from("meals").select("*");
+meals=data||[];
+renderMeals();
 }
 
-// SAVE
-saveBtn.addEventListener("click", async () => {
-  const data = {
-    title: titleInput.value,
-    cost_band: costInput.value,
-    tags: tags,
-    ingredients: ingredients
-  };
+// RENDER MEALS
+function renderMeals(){
+mealList.innerHTML = meals.map(m=>`
+<div class="card">
+<b>${m.title}</b><br>
+<span class="tag ${m.cost_band}">${m.cost_band}</span>
+${(m.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")}
+<div>${(m.ingredients||[]).join(", ")}</div>
+</div>
+`).join("");
+}
 
-  if (!data.title || ingredients.length === 0) {
-    alert("Add title and ingredients");
-    return;
-  }
+// WEEK
+function generateWeek(){
+week=[];
+let pool=[...meals];
 
-  if (editingId) {
-    await supabase.from("meals").update(data).eq("id", editingId);
-  } else {
-    await supabase.from("meals").insert(data);
-  }
+for(let i=0;i<7;i++){
+let pick=pool[Math.floor(Math.random()*pool.length)];
+week.push(pick);
+pool=pool.filter(m=>m.id!==pick.id);
+}
+saveWeek();
+renderWeek();
+}
 
-  resetForm();
-  loadMeals();
+async function saveWeek(){
+await supabase.from("weekly_plan").delete().neq("id",0);
+await supabase.from("weekly_plan").insert(week);
+}
+
+async function loadWeek(){
+const {data}=await supabase.from("weekly_plan").select("*");
+week=data||[];
+renderWeek();
+}
+
+function renderWeek(){
+weekList.innerHTML = week.map(m=>`<div class="card">${m.title}</div>`).join("");
+buildShopping();
+}
+
+// SHOPPING
+function buildShopping(){
+let items=[];
+week.forEach(m=>{
+(m.ingredients||[]).forEach(i=>items.push(i));
 });
-
-// LOAD
-async function loadMeals() {
-  const { data } = await supabase.from("meals").select("*").order("created_at", {ascending:false});
-  meals = data || [];
-  renderMeals();
+let unique=[...new Set(items)];
+shopList.innerHTML = unique.map(i=>`<div>${i}</div>`).join("");
 }
 
-// RENDER
-function renderMeals() {
-  mealList.innerHTML = "";
-
-  meals.forEach(m => {
-    mealList.innerHTML += `
-    <div class="card">
-      <b>${m.title}</b><br>
-      <span class="tag ${m.cost_band}">${m.cost_band}</span>
-      ${(m.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")}
-      <div class="small">${(m.ingredients||[]).join(", ")}</div>
-
-      <div class="actions">
-        <button onclick="editMeal('${m.id}')">Edit</button>
-        <button onclick="deleteMeal('${m.id}')">Delete</button>
-      </div>
-    </div>
-    `;
-  });
+// EXTRA
+function addExtra(){
+extras.push(extraItem.value);
+extraItem.value="";
+extraList.innerHTML = extras.map(e=>`<div>${e}</div>`).join("");
 }
 
-// EDIT
-window.editMeal = function(id) {
-  const m = meals.find(x => x.id == id);
-  if (!m) return;
-
-  editingId = id;
-  titleInput.value = m.title;
-  costInput.value = m.cost_band;
-  tags = [...(m.tags||[])];
-  ingredients = [...(m.ingredients||[])];
-
-  renderTags();
-  renderIngredients();
-
-  cancelEditBtn.classList.remove("hidden");
-}
-
-// CANCEL EDIT
-cancelEditBtn.addEventListener("click", resetForm);
-
-// DELETE
-window.deleteMeal = async function(id) {
-  if (!confirm("Delete meal?")) return;
-  await supabase.from("meals").delete().eq("id", id);
-  loadMeals();
-};
-
-// RESET
-function resetForm() {
-  titleInput.value = "";
-  tags = [];
-  ingredients = [];
-  editingId = null;
-
-  renderTags();
-  renderIngredients();
-
-  cancelEditBtn.classList.add("hidden");
-}
+// INIT
+loadMeals();
+loadWeek();
 </script>
 
 </body>
