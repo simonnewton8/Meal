@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meal Planner VV2</title>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <title>Meal Planner</title>
   <style>
     :root {
       --bg: #f6f7fb;
@@ -14,16 +13,13 @@
       --line: #e5e7eb;
       --primary: #2563eb;
       --primary-dark: #1d4ed8;
-      --accent: #14b8a6;
       --danger: #dc2626;
       --danger-dark: #b91c1c;
       --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
       --radius: 18px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -63,13 +59,8 @@
       font-size: 0.98rem;
     }
 
-    .screen {
-      display: none;
-    }
-
-    .screen.active {
-      display: block;
-    }
+    .screen { display: none; }
+    .screen.active { display: block; }
 
     .card {
       background: var(--card);
@@ -98,6 +89,17 @@
       white-space: pre-wrap;
     }
 
+    .error-box {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      white-space: pre-wrap;
+      display: none;
+    }
+
     label {
       display: block;
       font-size: 0.92rem;
@@ -105,8 +107,7 @@
       margin: 12px 0 6px;
     }
 
-    input,
-    select {
+    input, select {
       width: 100%;
       border: 1px solid var(--line);
       border-radius: 14px;
@@ -117,8 +118,7 @@
       outline: none;
     }
 
-    input:focus,
-    select:focus {
+    input:focus, select:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
     }
@@ -130,9 +130,7 @@
     }
 
     @media (min-width: 640px) {
-      .row.two {
-        grid-template-columns: 1fr 1fr;
-      }
+      .row.two { grid-template-columns: 1fr 1fr; }
     }
 
     .btn-row {
@@ -152,56 +150,25 @@
       transition: 0.18s ease;
     }
 
-    button:hover {
-      transform: translateY(-1px);
-    }
+    button:hover { transform: translateY(-1px); }
 
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #eef2ff; color: #1e3a8a; }
+    .btn-secondary:hover { background: #dbeafe; }
+    .btn-danger { background: #fee2e2; color: var(--danger); }
+    .btn-danger:hover { background: #fecaca; color: var(--danger-dark); }
+    .btn-ghost { background: #f3f4f6; color: #374151; }
+    .btn-ghost:hover { background: #e5e7eb; }
 
-    .btn-primary:hover {
-      background: var(--primary-dark);
-    }
-
-    .btn-secondary {
-      background: #eef2ff;
-      color: #1e3a8a;
-    }
-
-    .btn-secondary:hover {
-      background: #dbeafe;
-    }
-
-    .btn-danger {
-      background: #fee2e2;
-      color: var(--danger);
-    }
-
-    .btn-danger:hover {
-      background: #fecaca;
-      color: var(--danger-dark);
-    }
-
-    .btn-ghost {
-      background: #f3f4f6;
-      color: #374151;
-    }
-
-    .btn-ghost:hover {
-      background: #e5e7eb;
-    }
-
-    .ingredient-input-row {
+    .ingredient-input-row, .compact-input-row {
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 8px;
       margin-top: 8px;
     }
 
-    .ingredient-chip-wrap,
-    .tag-chip-wrap {
+    .ingredient-chip-wrap, .tag-chip-wrap {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
@@ -219,8 +186,7 @@
       gap: 8px;
     }
 
-    .ingredient-chip button,
-    .tag-chip button {
+    .ingredient-chip button, .tag-chip button {
       padding: 0;
       min-width: 20px;
       height: 20px;
@@ -230,8 +196,7 @@
       font-size: 12px;
     }
 
-    .meal-card h3,
-    .plan-card h3 {
+    .meal-card h3, .plan-card h3 {
       margin: 0 0 8px;
       font-size: 1.08rem;
     }
@@ -277,9 +242,7 @@
       border-color: #fecaca;
     }
 
-    .meal-list,
-    .plan-list,
-    .shopping-list {
+    .meal-list, .plan-list, .shopping-list {
       display: grid;
       gap: 12px;
     }
@@ -310,9 +273,7 @@
       font-size: 0.92rem;
     }
 
-    .shopping-list.condensed {
-      gap: 8px;
-    }
+    .shopping-list.condensed { gap: 8px; }
 
     .shopping-item {
       display: flex;
@@ -340,13 +301,6 @@
     .shopping-item span {
       font-size: 0.93rem;
       line-height: 1.2;
-    }
-
-    .compact-input-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      margin-top: 10px;
     }
 
     .bottom-nav {
@@ -427,9 +381,7 @@
       display: none;
     }
 
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -438,6 +390,8 @@
       <h1>Meal Planner</h1>
       <p>Add meals, generate a varied week, then build your shopping list.</p>
     </div>
+
+    <div id="errorBox" class="error-box"></div>
 
     <section id="screen-meals" class="screen active">
       <div class="card">
@@ -553,13 +507,6 @@
     const CURRENT_WEEK_KEY = "current";
     const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-    if (!window.supabase || !window.supabase.createClient) {
-  alert("Supabase failed to load. The page script stopped before the buttons could work.");
-  throw new Error("Supabase library not loaded");
-}
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     let meals = [];
     let currentPlan = [];
     let shoppingChecks = {};
@@ -568,6 +515,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let draftTags = [];
     let editingMealId = null;
 
+    const errorBox = document.getElementById("errorBox");
     const mealTitleInput = document.getElementById("mealTitle");
     const costBandInput = document.getElementById("costBand");
     const mealCostInput = document.getElementById("mealCost");
@@ -590,6 +538,34 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const saveMealBtn = document.getElementById("saveMealBtn");
     const mealStatus = document.getElementById("mealStatus");
     const planStatus = document.getElementById("planStatus");
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.style.display = "block";
+    }
+
+    async function api(path, options = {}) {
+      const url = `${SUPABASE_URL}/rest/v1/${path}`;
+      const response = await fetch(url, {
+        method: options.method || "GET",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          "Prefer": options.prefer || "return=representation",
+          ...options.headers
+        },
+        body: options.body ? JSON.stringify(options.body) : undefined
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `Request failed: ${response.status}`);
+      }
+
+      const text = await response.text();
+      return text ? JSON.parse(text) : null;
+    }
 
     function normaliseText(value) {
       return String(value || "").trim().replace(/\s+/g, " ");
@@ -622,7 +598,6 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     function switchScreen(name) {
       document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
       document.querySelectorAll(".nav-btn").forEach(btn => btn.classList.remove("active"));
-
       document.getElementById(`screen-${name}`).classList.add("active");
       document.querySelector(`.nav-btn[data-screen="${name}"]`).classList.add("active");
     }
@@ -755,38 +730,33 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     }
 
     async function loadMeals() {
-      const { data, error } = await supabase
-        .from("meals")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      meals = data || [];
+      meals = await api("meals?select=*&order=created_at.desc");
     }
 
     async function loadWeeklyPlan() {
-      const { data, error } = await supabase
-        .from("weekly_plan")
-        .select("day_name, meal_id, meals(*)")
-        .eq("week_key", CURRENT_WEEK_KEY);
+      const rows = await api(`weekly_plan?select=day_name,meal_id&week_key=eq.${encodeURIComponent(CURRENT_WEEK_KEY)}`);
+      if (!rows.length) {
+        currentPlan = [];
+        return;
+      }
 
-      if (error) throw error;
+      const ids = [...new Set(rows.map(r => r.meal_id).filter(Boolean))];
+      let mealMap = new Map();
 
-      const rows = data || [];
+      if (ids.length) {
+        const idList = ids.map(id => `"${id}"`).join(",");
+        const mealsForWeek = await api(`meals?select=*&id=in.(${encodeURIComponent(idList)})`);
+        mealMap = new Map(mealsForWeek.map(meal => [meal.id, meal]));
+      }
+
       currentPlan = DAYS.map(day => {
         const row = rows.find(item => item.day_name === day);
-        return row && row.meals ? row.meals : null;
+        return row ? mealMap.get(row.meal_id) || null : null;
       }).filter(Boolean);
     }
 
     async function loadShoppingChecks() {
-      const { data, error } = await supabase
-        .from("shopping_checks")
-        .select("*")
-        .eq("week_key", CURRENT_WEEK_KEY);
-
-      if (error) throw error;
-
+      const data = await api(`shopping_checks?select=*&week_key=eq.${encodeURIComponent(CURRENT_WEEK_KEY)}`);
       shoppingChecks = {};
       (data || []).forEach(item => {
         shoppingChecks[item.item_key] = item.checked;
@@ -794,14 +764,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     }
 
     async function loadExtraItems() {
-      const { data, error } = await supabase
-        .from("shopping_extra_items")
-        .select("*")
-        .eq("week_key", CURRENT_WEEK_KEY)
-        .order("label", { ascending: true });
-
-      if (error) throw error;
-      extraItems = data || [];
+      extraItems = await api(`shopping_extra_items?select=*&week_key=eq.${encodeURIComponent(CURRENT_WEEK_KEY)}&order=label.asc`);
     }
 
     async function loadAllData() {
@@ -825,6 +788,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       } catch (error) {
         setStatus(mealStatus, error.message || "Error loading data.");
         setStatus(planStatus, error.message || "Error loading data.");
+        showError(error.message || "Error loading data");
       }
     }
 
@@ -876,22 +840,28 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       setStatus(mealStatus, "Saving...");
 
-      let error;
-      if (editingMealId) {
-        ({ error } = await supabase.from("meals").update(payload).eq("id", editingMealId));
-      } else {
-        ({ error } = await supabase.from("meals").insert(payload));
-      }
+      try {
+        if (editingMealId) {
+          await api(`meals?id=eq.${editingMealId}`, {
+            method: "PATCH",
+            body: payload,
+            prefer: "return=minimal"
+          });
+        } else {
+          await api("meals", {
+            method: "POST",
+            body: payload
+          });
+        }
 
-      if (error) {
-        setStatus(mealStatus, error.message);
-        return;
+        clearDraft();
+        await loadAllData();
+        setStatus(mealStatus, "Saved.");
+        setTimeout(() => setStatus(mealStatus, ""), 1500);
+      } catch (error) {
+        setStatus(mealStatus, error.message || "Save failed.");
+        showError(error.message || "Save failed");
       }
-
-      clearDraft();
-      await loadAllData();
-      setStatus(mealStatus, "Saved.");
-      setTimeout(() => setStatus(mealStatus, ""), 1500);
     }
 
     document.getElementById("saveMealBtn").addEventListener("click", saveMeal);
@@ -900,16 +870,22 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       const ok = confirm("Delete this meal?");
       if (!ok) return;
 
-      await supabase.from("weekly_plan").delete().eq("meal_id", mealId);
-      const { error } = await supabase.from("meals").delete().eq("id", mealId);
+      try {
+        await api(`weekly_plan?meal_id=eq.${mealId}`, {
+          method: "DELETE",
+          prefer: "return=minimal"
+        });
 
-      if (error) {
-        alert(error.message);
-        return;
+        await api(`meals?id=eq.${mealId}`, {
+          method: "DELETE",
+          prefer: "return=minimal"
+        });
+
+        if (editingMealId === mealId) clearDraft();
+        await loadAllData();
+      } catch (error) {
+        alert(error.message || "Delete failed");
       }
-
-      if (editingMealId === mealId) clearDraft();
-      await loadAllData();
     }
 
     function renderMeals() {
@@ -1040,7 +1016,10 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     }
 
     async function saveWeeklyPlan(plan) {
-      await supabase.from("weekly_plan").delete().eq("week_key", CURRENT_WEEK_KEY);
+      await api(`weekly_plan?week_key=eq.${encodeURIComponent(CURRENT_WEEK_KEY)}`, {
+        method: "DELETE",
+        prefer: "return=minimal"
+      });
 
       const rows = plan.map((meal, index) => ({
         day_name: DAYS[index],
@@ -1049,11 +1028,10 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       }));
 
       if (rows.length) {
-        const { error } = await supabase.from("weekly_plan").insert(rows);
-        if (error) {
-          setStatus(planStatus, error.message);
-          return false;
-        }
+        await api("weekly_plan", {
+          method: "POST",
+          body: rows
+        });
       }
 
       return true;
@@ -1083,7 +1061,6 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           if (!candidates.length) break;
 
           candidates.sort((a, b) => scoreMealForPosition(b, previousMeal, plan, budget) - scoreMealForPosition(a, previousMeal, plan, budget));
-
           const topSlice = candidates.slice(0, Math.min(5, candidates.length));
           const chosen = topSlice[Math.floor(Math.random() * topSlice.length)];
 
@@ -1105,25 +1082,52 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         return;
       }
 
-      const ok = await saveWeeklyPlan(bestPlan);
-      if (!ok) return;
+      try {
+        await saveWeeklyPlan(bestPlan);
 
-      await supabase.from("shopping_checks").delete().eq("week_key", CURRENT_WEEK_KEY);
-      await supabase.from("shopping_extra_items").delete().eq("week_key", CURRENT_WEEK_KEY);
+        await api(`shopping_checks?week_key=eq.${encodeURIComponent(CURRENT_WEEK_KEY)}`, {
+          method: "DELETE",
+          prefer: "return=minimal"
+        });
 
-      await loadAllData();
-      switchScreen("plan");
-      setStatus(planStatus, "Week generated.");
-      setTimeout(() => setStatus(planStatus, ""), 1500);
+        await api(`shopping_extra_items?week_key=eq.${encodeURIComponent(CURRENT_WEEK_KEY)}`, {
+          method: "DELETE",
+          prefer: "return=minimal"
+        });
+
+        await loadAllData();
+        switchScreen("plan");
+        setStatus(planStatus, "Week generated.");
+        setTimeout(() => setStatus(planStatus, ""), 1500);
+      } catch (error) {
+        setStatus(planStatus, error.message || "Generate failed.");
+        showError(error.message || "Generate failed");
+      }
     }
 
     document.getElementById("generateWeekBtn").addEventListener("click", generateWeek);
 
     document.getElementById("clearWeekBtn").addEventListener("click", async () => {
-      await supabase.from("weekly_plan").delete().eq("week_key", CURRENT_WEEK_KEY);
-      await supabase.from("shopping_checks").delete().eq("week_key", CURRENT_WEEK_KEY);
-      await supabase.from("shopping_extra_items").delete().eq("week_key", CURRENT_WEEK_KEY);
-      await loadAllData();
+      try {
+        await api(`weekly_plan?week_key=eq.${encodeURIComponent(CURRENT_WEEK_KEY)}`, {
+          method: "DELETE",
+          prefer: "return=minimal"
+        });
+
+        await api(`shopping_checks?week_key=eq.${encodeURIComponent(CURRENT_WEEK_KEY)}`, {
+          method: "DELETE",
+          prefer: "return=minimal"
+        });
+
+        await api(`shopping_extra_items?week_key=eq.${encodeURIComponent(CURRENT_WEEK_KEY)}`, {
+          method: "DELETE",
+          prefer: "return=minimal"
+        });
+
+        await loadAllData();
+      } catch (error) {
+        showError(error.message || "Clear week failed");
+      }
     });
 
     async function moveMeal(index, direction) {
@@ -1211,24 +1215,22 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     }
 
     async function setCheckState(itemKey, checked) {
-      const { data: existing, error } = await supabase
-        .from("shopping_checks")
-        .select("id")
-        .eq("week_key", CURRENT_WEEK_KEY)
-        .eq("item_key", itemKey)
-        .maybeSingle();
+      const existing = await api(`shopping_checks?select=id&week_key=eq.${encodeURIComponent(CURRENT_WEEK_KEY)}&item_key=eq.${encodeURIComponent(itemKey)}`);
 
-      if (error && !String(error.message || "").toLowerCase().includes("multiple")) {
-        return;
-      }
-
-      if (existing) {
-        await supabase.from("shopping_checks").update({ checked }).eq("id", existing.id);
+      if (existing.length) {
+        await api(`shopping_checks?id=eq.${existing[0].id}`, {
+          method: "PATCH",
+          body: { checked },
+          prefer: "return=minimal"
+        });
       } else {
-        await supabase.from("shopping_checks").insert({
-          item_key: itemKey,
-          checked,
-          week_key: CURRENT_WEEK_KEY
+        await api("shopping_checks", {
+          method: "POST",
+          body: {
+            item_key: itemKey,
+            checked,
+            week_key: CURRENT_WEEK_KEY
+          }
         });
       }
 
@@ -1269,8 +1271,12 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       shoppingListEl.querySelectorAll("[data-check-item]").forEach(input => {
         input.addEventListener("change", async () => {
-          await setCheckState(input.dataset.checkItem, input.checked);
-          await loadAllData();
+          try {
+            await setCheckState(input.dataset.checkItem, input.checked);
+            await loadAllData();
+          } catch (error) {
+            showError(error.message || "Checkbox update failed");
+          }
         });
       });
     }
@@ -1279,25 +1285,35 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       const value = normaliseText(extraItemInput.value);
       if (!value) return;
 
-      const { error } = await supabase.from("shopping_extra_items").insert({
-        label: value,
-        week_key: CURRENT_WEEK_KEY
-      });
+      try {
+        await api("shopping_extra_items", {
+          method: "POST",
+          body: {
+            label: value,
+            week_key: CURRENT_WEEK_KEY
+          }
+        });
 
-      if (error) {
-        alert(error.message);
-        return;
+        extraItemInput.value = "";
+        await loadAllData();
+      } catch (error) {
+        alert(error.message || "Add extra item failed");
       }
-
-      extraItemInput.value = "";
-      await loadAllData();
     }
 
     document.getElementById("addExtraItemBtn").addEventListener("click", addExtraItem);
 
     async function deleteExtraItem(id) {
-      await supabase.from("shopping_extra_items").delete().eq("id", id);
-      await supabase.from("shopping_checks").delete().eq("week_key", CURRENT_WEEK_KEY).eq("item_key", `extra:${id}`);
+      await api(`shopping_extra_items?id=eq.${id}`, {
+        method: "DELETE",
+        prefer: "return=minimal"
+      });
+
+      await api(`shopping_checks?week_key=eq.${encodeURIComponent(CURRENT_WEEK_KEY)}&item_key=eq.${encodeURIComponent("extra:" + id)}`, {
+        method: "DELETE",
+        prefer: "return=minimal"
+      });
+
       await loadAllData();
     }
 
@@ -1321,92 +1337,104 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       extraItemsListEl.querySelectorAll("[data-check-item]").forEach(input => {
         input.addEventListener("change", async () => {
-          await setCheckState(input.dataset.checkItem, input.checked);
-          await loadAllData();
+          try {
+            await setCheckState(input.dataset.checkItem, input.checked);
+            await loadAllData();
+          } catch (error) {
+            showError(error.message || "Checkbox update failed");
+          }
         });
       });
 
       extraItemsListEl.querySelectorAll("[data-delete-extra]").forEach(btn => {
         btn.addEventListener("click", async () => {
-          await deleteExtraItem(btn.dataset.deleteExtra);
+          try {
+            await deleteExtraItem(btn.dataset.deleteExtra);
+          } catch (error) {
+            showError(error.message || "Delete extra item failed");
+          }
         });
       });
     }
+
     async function addExampleMeals() {
-  const exampleMeals = [
-    {
-      title: "Spaghetti Bolognese",
-      cost_band: "medium",
-      estimated_cost: 8.5,
-      tags: ["pasta", "beef"],
-      ingredients: ["spaghetti", "mince", "passata", "onion", "garlic"]
-    },
-    {
-      title: "Chicken Fajitas",
-      cost_band: "medium",
-      estimated_cost: 9.0,
-      tags: ["chicken", "wraps"],
-      ingredients: ["wraps", "chicken", "peppers", "onion", "fajita seasoning"]
-    },
-    {
-      title: "Sausage Tray Bake",
-      cost_band: "low",
-      estimated_cost: 6.5,
-      tags: ["tray bake", "sausage"],
-      ingredients: ["sausages", "potatoes", "red onion", "peppers"]
-    },
-    {
-      title: "Vegetable Curry",
-      cost_band: "low",
-      estimated_cost: 5.8,
-      tags: ["curry", "vegetarian"],
-      ingredients: ["rice", "coconut milk", "curry paste", "chickpeas", "spinach"]
-    },
-    {
-      title: "Salmon Rice Bowls",
-      cost_band: "high",
-      estimated_cost: 11.5,
-      tags: ["fish", "rice"],
-      ingredients: ["salmon", "rice", "broccoli", "soy sauce", "spring onions"]
-    },
-    {
-      title: "Chicken Pasta Bake",
-      cost_band: "medium",
-      estimated_cost: 8.8,
-      tags: ["pasta", "chicken"],
-      ingredients: ["pasta", "chicken", "cheese", "passata", "sweetcorn"]
-    },
-    {
-      title: "Beef Chilli",
-      cost_band: "medium",
-      estimated_cost: 8.2,
-      tags: ["beef", "rice"],
-      ingredients: ["mince", "rice", "kidney beans", "tomatoes", "onion"]
-    },
-    {
-      title: "Halloumi Wraps",
-      cost_band: "medium",
-      estimated_cost: 7.4,
-      tags: ["wraps", "vegetarian"],
-      ingredients: ["wraps", "halloumi", "lettuce", "tomatoes", "yoghurt"]
+      const exampleMeals = [
+        {
+          title: "Spaghetti Bolognese",
+          cost_band: "medium",
+          estimated_cost: 8.5,
+          tags: ["pasta", "beef"],
+          ingredients: ["spaghetti", "mince", "passata", "onion", "garlic"]
+        },
+        {
+          title: "Chicken Fajitas",
+          cost_band: "medium",
+          estimated_cost: 9.0,
+          tags: ["chicken", "wraps"],
+          ingredients: ["wraps", "chicken", "peppers", "onion", "fajita seasoning"]
+        },
+        {
+          title: "Sausage Tray Bake",
+          cost_band: "low",
+          estimated_cost: 6.5,
+          tags: ["tray bake", "sausage"],
+          ingredients: ["sausages", "potatoes", "red onion", "peppers"]
+        },
+        {
+          title: "Vegetable Curry",
+          cost_band: "low",
+          estimated_cost: 5.8,
+          tags: ["curry", "vegetarian"],
+          ingredients: ["rice", "coconut milk", "curry paste", "chickpeas", "spinach"]
+        },
+        {
+          title: "Salmon Rice Bowls",
+          cost_band: "high",
+          estimated_cost: 11.5,
+          tags: ["fish", "rice"],
+          ingredients: ["salmon", "rice", "broccoli", "soy sauce", "spring onions"]
+        },
+        {
+          title: "Chicken Pasta Bake",
+          cost_band: "medium",
+          estimated_cost: 8.8,
+          tags: ["pasta", "chicken"],
+          ingredients: ["pasta", "chicken", "cheese", "passata", "sweetcorn"]
+        },
+        {
+          title: "Beef Chilli",
+          cost_band: "medium",
+          estimated_cost: 8.2,
+          tags: ["beef", "rice"],
+          ingredients: ["mince", "rice", "kidney beans", "tomatoes", "onion"]
+        },
+        {
+          title: "Halloumi Wraps",
+          cost_band: "medium",
+          estimated_cost: 7.4,
+          tags: ["wraps", "vegetarian"],
+          ingredients: ["wraps", "halloumi", "lettuce", "tomatoes", "yoghurt"]
+        }
+      ];
+
+      try {
+        await api("meals", {
+          method: "POST",
+          body: exampleMeals
+        });
+
+        await loadAllData();
+        alert("Example meals added.");
+      } catch (error) {
+        alert(error.message || "Add example meals failed");
+      }
     }
-  ];
 
-  const { error } = await supabase.from("meals").insert(exampleMeals);
-  if (error) {
-    alert(error.message);
-    return;
-  }
+    document.getElementById("exampleMealsBtn").addEventListener("click", addExampleMeals);
 
-  await loadAllData();
-  alert("Example meals added.");
-}
-
-document.getElementById("exampleMealsBtn").addEventListener("click", addExampleMeals);
-
-renderDraftTags();
-renderDraftIngredients();
-loadAllData();
-</script>
+    renderDraftTags();
+    renderDraftIngredients();
+    loadAllData();
+  </script>
 </body>
 </html>
