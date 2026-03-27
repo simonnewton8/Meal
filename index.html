@@ -1,222 +1,1312 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meal Planner</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meal Planner</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --accent: #14b8a6;
+      --danger: #dc2626;
+      --danger-dark: #b91c1c;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
 
-<style>
-body { font-family: Arial; margin:0; background:#f5f5f5;}
-.wrap { max-width:700px; margin:auto; padding:10px;}
-.card { background:white; padding:12px; margin:10px 0; border-radius:10px;}
-input, select, button { width:100%; padding:10px; margin-top:5px;}
-button { border:none; border-radius:8px; cursor:pointer;}
-.tag { display:inline-block; padding:4px 8px; margin:3px; border-radius:999px; font-size:12px; background:#eee;}
-.low { background:#d1fae5;}
-.medium { background:#fef3c7;}
-.high { background:#fee2e2;}
-.hidden { display:none;}
-.nav { display:flex; gap:5px;}
-.nav button { flex:1;}
-</style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 25%),
+        radial-gradient(circle at top right, rgba(20, 184, 166, 0.08), transparent 20%),
+        var(--bg);
+      color: var(--text);
+      padding-bottom: 90px;
+    }
+
+    .app {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #2563eb, #14b8a6);
+      color: white;
+      border-radius: 24px;
+      padding: 24px 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: 1.9rem;
+      line-height: 1.1;
+    }
+
+    .hero p {
+      margin: 0;
+      opacity: 0.95;
+      font-size: 0.98rem;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 14px;
+      border: 1px solid rgba(229, 231, 235, 0.8);
+    }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.92rem;
+      font-weight: 600;
+      margin: 12px 0 6px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 16px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+
+    .row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 640px) {
+      .row.two {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: #eef2ff;
+      color: #1e3a8a;
+    }
+
+    .btn-secondary:hover {
+      background: #dbeafe;
+    }
+
+    .btn-danger {
+      background: #fee2e2;
+      color: var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: #fecaca;
+      color: var(--danger-dark);
+    }
+
+    .btn-ghost {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .btn-ghost:hover {
+      background: #e5e7eb;
+    }
+
+    .ingredient-input-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .ingredient-chip-wrap,
+    .tag-chip-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ingredient-chip {
+      background: #eff6ff;
+      color: #1d4ed8;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ingredient-chip button,
+    .tag-chip button {
+      padding: 0;
+      min-width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.08);
+      color: inherit;
+      font-size: 12px;
+    }
+
+    .meal-card h3,
+    .plan-card h3 {
+      margin: 0 0 8px;
+      font-size: 1.08rem;
+    }
+
+    .meta-line {
+      margin-top: 8px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .tag-general {
+      background: #ecfeff;
+      color: #0f766e;
+      border-color: #99f6e4;
+    }
+
+    .tag-cost-low {
+      background: #ecfdf5;
+      color: #047857;
+      border-color: #a7f3d0;
+    }
+
+    .tag-cost-medium {
+      background: #fffbeb;
+      color: #b45309;
+      border-color: #fde68a;
+    }
+
+    .tag-cost-high {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+
+    .meal-list,
+    .plan-list,
+    .shopping-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .day-label {
+      display: inline-block;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .actions button {
+      flex: 1 1 120px;
+      padding: 10px 12px;
+      font-size: 0.92rem;
+    }
+
+    .shopping-list.condensed {
+      gap: 8px;
+    }
+
+    .shopping-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fafafa;
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      border-radius: 12px;
+      min-height: 40px;
+    }
+
+    .shopping-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      flex: 0 0 auto;
+    }
+
+    .shopping-item.checked span {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .shopping-item span {
+      font-size: 0.93rem;
+      line-height: 1.2;
+    }
+
+    .compact-input-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(229, 231, 235, 0.95);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+      z-index: 20;
+    }
+
+    .nav-btn {
+      background: transparent;
+      color: #4b5563;
+      border-radius: 14px;
+      padding: 12px 10px;
+      font-weight: 700;
+    }
+
+    .nav-btn.active {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 20px 10px;
+      color: var(--muted);
+      font-size: 0.97rem;
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr 1fr;
+      margin-top: 12px;
+    }
+
+    .summary-box {
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .summary-box strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .tiny {
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    .helper {
+      margin-top: 8px;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .editing-banner {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+  </style>
 </head>
-
 <body>
-<div class="wrap">
+  <div class="app">
+    <div class="hero">
+      <h1>Meal Planner</h1>
+      <p>Add meals, generate a varied week, then build your shopping list.</p>
+    </div>
 
-<div class="nav card">
-<button onclick="show('meals')">Meals</button>
-<button onclick="show('week')">Week</button>
-<button onclick="show('shop')">Shop</button>
-</div>
+    <section id="screen-meals" class="screen active">
+      <div class="card">
+        <h2 class="section-title">Add Meal</h2>
 
-<div id="meals">
+        <div id="editingBanner" class="editing-banner" style="display:none;"></div>
 
-<div class="card">
-<h3>Add Meal</h3>
+        <label for="mealTitle">Meal title</label>
+        <input id="mealTitle" type="text" placeholder="Example: Chicken fajitas" />
 
-<input id="title" placeholder="Meal name">
+        <div class="row two">
+          <div>
+            <label for="costBand">Cost band</label>
+            <select id="costBand">
+              <option value="low">Low cost</option>
+              <option value="medium" selected>Medium cost</option>
+              <option value="high">Higher cost</option>
+            </select>
+          </div>
+          <div>
+            <label for="mealCost">Estimated cost (£)</label>
+            <input id="mealCost" type="number" min="0" step="0.01" placeholder="8.50" />
+          </div>
+        </div>
 
-<select id="cost">
-<option value="low">Low</option>
-<option value="medium">Medium</option>
-<option value="high">High</option>
-</select>
+        <label for="tagInput">Tags, up to 2</label>
+        <input id="tagInput" list="tagSuggestions" type="text" placeholder="Example: pasta, chicken, tray bake, veggie" />
+        <datalist id="tagSuggestions"></datalist>
+        <div class="btn-row">
+          <button type="button" class="btn-secondary" id="addTagBtn">Add tag</button>
+        </div>
+        <div id="selectedTags" class="tag-chip-wrap"></div>
+        <div class="helper">Use tags to help spread meals out across the week. Example: pasta, rice, chicken, vegetarian, quick.</div>
 
-<input id="tagInput" placeholder="Tag">
-<button onclick="addTag()">Add Tag</button>
-<div id="tags"></div>
+        <label for="ingredientInput">Ingredients</label>
+        <div class="ingredient-input-row">
+          <input id="ingredientInput" type="text" placeholder="Add one ingredient at a time" />
+          <button type="button" class="btn-secondary" id="addIngredientBtn">Add</button>
+        </div>
+        <div id="ingredientListDraft" class="ingredient-chip-wrap"></div>
 
-<input id="ingredientInput" placeholder="Ingredient">
-<button onclick="addIngredient()">Add Ingredient</button>
-<div id="ingredients"></div>
+        <div class="btn-row">
+          <button type="button" class="btn-primary" id="saveMealBtn">Save meal</button>
+          <button type="button" class="btn-secondary" id="exampleMealsBtn">Add example meals</button>
+          <button type="button" class="btn-ghost" id="clearDraftBtn">Clear form</button>
+          <button type="button" class="btn-danger" id="cancelEditBtn" style="display:none;">Cancel edit</button>
+        </div>
+      </div>
 
-<button onclick="saveMeal()">Save Meal</button>
-</div>
+      <div class="card">
+        <h2 class="section-title">Saved Meals</h2>
+        <div id="mealsList" class="meal-list"></div>
+      </div>
+    </section>
 
-<div class="card">
-<h3>Meals</h3>
-<div id="mealList"></div>
-</div>
+    <section id="screen-plan" class="screen">
+      <div class="card">
+        <h2 class="section-title">Generate Week</h2>
+        <label for="weeklyBudget">Weekly budget (£), optional</label>
+        <input id="weeklyBudget" type="number" min="0" step="0.01" placeholder="50" />
+        <div class="btn-row">
+          <button type="button" class="btn-primary" id="generateWeekBtn">Generate week</button>
+          <button type="button" class="btn-ghost" id="clearWeekBtn">Clear week</button>
+        </div>
 
-</div>
+        <div class="summary-grid">
+          <div class="summary-box">
+            <strong id="summaryMeals">0 meals</strong>
+            <span class="tiny">Generated this week</span>
+          </div>
+          <div class="summary-box">
+            <strong id="summaryCost">£0.00</strong>
+            <span class="tiny">Estimated total</span>
+          </div>
+        </div>
+      </div>
 
-<div id="week" class="hidden">
-<div class="card">
-<button onclick="generateWeek()">Generate Week</button>
-<div id="weekList"></div>
-</div>
-</div>
+      <div class="card">
+        <h2 class="section-title">This Week</h2>
+        <div id="planList" class="plan-list"></div>
+      </div>
+    </section>
 
-<div id="shop" class="hidden">
-<div class="card">
-<h3>Shopping List</h3>
-<div id="shopList"></div>
+    <section id="screen-shop" class="screen">
+      <div class="card">
+        <h2 class="section-title">Shopping List</h2>
+        <p class="muted">This is built from the meals in the current week.</p>
+        <div id="shoppingList" class="shopping-list condensed"></div>
 
-<input id="extraItem" placeholder="Extra item">
-<button onclick="addExtra()">Add</button>
-<div id="extraList"></div>
+        <label for="extraItemInput">Add extra item</label>
+        <div class="compact-input-row">
+          <input id="extraItemInput" type="text" placeholder="Example: kitchen roll" />
+          <button type="button" class="btn-secondary" id="addExtraItemBtn">Add</button>
+        </div>
+        <div id="extraItemsList" class="shopping-list condensed" style="margin-top:10px;"></div>
+      </div>
+    </section>
+  </div>
 
-</div>
-</div>
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-screen="meals">Meals</button>
+    <button class="nav-btn" data-screen="plan">Week</button>
+    <button class="nav-btn" data-screen="shop">Shop</button>
+  </nav>
 
-</div>
+  <script>
+    const STORAGE_KEYS = {
+      meals: "mealPlanner_meals_v3",
+      plan: "mealPlanner_plan_v3",
+      checks: "mealPlanner_checks_v3",
+      extras: "mealPlanner_extras_v3"
+    };
 
-<script>
-const supabase = window.supabase.createClient(
-"https://njhgiitbtvsbudarsmbk.supabase.co",
-"sb_publishable_AHbuYoScuVzZ6jgAkQMMpg_eZRPn6v0"
-);
+    const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-let tags = [];
-let ingredients = [];
-let meals = [];
-let week = [];
-let extras = [];
+    let meals = load(STORAGE_KEYS.meals, []);
+    let currentPlan = load(STORAGE_KEYS.plan, []);
+    let shoppingChecks = load(STORAGE_KEYS.checks, {});
+    let extraItems = load(STORAGE_KEYS.extras, []);
+    let draftIngredients = [];
+    let draftTags = [];
+    let editingMealId = null;
 
-// NAV
-function show(s){
-document.getElementById("meals").classList.add("hidden");
-document.getElementById("week").classList.add("hidden");
-document.getElementById("shop").classList.add("hidden");
-document.getElementById(s).classList.remove("hidden");
-}
+    const mealTitleInput = document.getElementById("mealTitle");
+    const costBandInput = document.getElementById("costBand");
+    const mealCostInput = document.getElementById("mealCost");
+    const tagInput = document.getElementById("tagInput");
+    const ingredientInput = document.getElementById("ingredientInput");
+    const extraItemInput = document.getElementById("extraItemInput");
 
-// TAGS
-function addTag(){
-if(!tagInput.value) return;
-if(tags.length >= 2) return alert("Max 2 tags");
-tags.push(tagInput.value);
-tagInput.value="";
-renderTags();
-}
-function renderTags(){
-tagsDiv.innerHTML = tags.map(t=>`<span class="tag">${t}</span>`).join("");
-}
+    const selectedTagsEl = document.getElementById("selectedTags");
+    const ingredientListDraftEl = document.getElementById("ingredientListDraft");
+    const mealsListEl = document.getElementById("mealsList");
+    const planListEl = document.getElementById("planList");
+    const shoppingListEl = document.getElementById("shoppingList");
+    const extraItemsListEl = document.getElementById("extraItemsList");
+    const tagSuggestionsEl = document.getElementById("tagSuggestions");
+    const weeklyBudgetInput = document.getElementById("weeklyBudget");
 
-// INGREDIENTS
-function addIngredient(){
-if(!ingredientInput.value) return;
-ingredients.push(ingredientInput.value);
-ingredientInput.value="";
-renderIngredients();
-}
-function renderIngredients(){
-ingredientsDiv.innerHTML = ingredients.map(i=>`<span class="tag">${i}</span>`).join("");
-}
+    const summaryMealsEl = document.getElementById("summaryMeals");
+    const summaryCostEl = document.getElementById("summaryCost");
+    const editingBannerEl = document.getElementById("editingBanner");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const saveMealBtn = document.getElementById("saveMealBtn");
 
-// SAVE MEAL
-async function saveMeal(){
-if(!title.value || ingredients.length === 0){
-alert("Add title + ingredients");
-return;
-}
+    function load(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
 
-await supabase.from("meals").insert({
-title:title.value,
-cost_band:cost.value,
-tags:tags,
-ingredients:ingredients
-});
+    function save(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
 
-title.value="";
-tags=[];
-ingredients=[];
-renderTags();
-renderIngredients();
-loadMeals();
-}
+    function uid() {
+      return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    }
 
-// LOAD MEALS
-async function loadMeals(){
-const {data}=await supabase.from("meals").select("*");
-meals=data||[];
-renderMeals();
-}
+    function normaliseText(value) {
+      return String(value || "").trim().replace(/\s+/g, " ");
+    }
 
-// RENDER MEALS
-function renderMeals(){
-mealList.innerHTML = meals.map(m=>`
-<div class="card">
-<b>${m.title}</b><br>
-<span class="tag ${m.cost_band}">${m.cost_band}</span>
-${(m.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")}
-<div>${(m.ingredients||[]).join(", ")}</div>
-</div>
-`).join("");
-}
+    function uniqueCaseInsensitive(list) {
+      const map = new Map();
+      list.forEach(item => {
+        const clean = normaliseText(item);
+        if (!clean) return;
+        const lower = clean.toLowerCase();
+        if (!map.has(lower)) map.set(lower, clean);
+      });
+      return [...map.values()];
+    }
 
-// WEEK
-function generateWeek(){
-week=[];
-let pool=[...meals];
+    function switchScreen(name) {
+      document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".nav-btn").forEach(btn => btn.classList.remove("active"));
 
-for(let i=0;i<7;i++){
-let pick=pool[Math.floor(Math.random()*pool.length)];
-week.push(pick);
-pool=pool.filter(m=>m.id!==pick.id);
-}
-saveWeek();
-renderWeek();
-}
+      document.getElementById(`screen-${name}`).classList.add("active");
+      document.querySelector(`.nav-btn[data-screen="${name}"]`).classList.add("active");
+    }
 
-async function saveWeek(){
-await supabase.from("weekly_plan").delete().neq("id",0);
-await supabase.from("weekly_plan").insert(week);
-}
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.addEventListener("click", () => switchScreen(btn.dataset.screen));
+    });
 
-async function loadWeek(){
-const {data}=await supabase.from("weekly_plan").select("*");
-week=data||[];
-renderWeek();
-}
+    function renderTagSuggestions() {
+      const allTags = uniqueCaseInsensitive(meals.flatMap(meal => meal.tags || []));
+      tagSuggestionsEl.innerHTML = allTags.map(tag => `<option value="${escapeHtml(tag)}"></option>`).join("");
+    }
 
-function renderWeek(){
-weekList.innerHTML = week.map(m=>`<div class="card">${m.title}</div>`).join("");
-buildShopping();
-}
+    function renderDraftTags() {
+      selectedTagsEl.innerHTML = "";
+      if (!draftTags.length) {
+        selectedTagsEl.innerHTML = `<div class="muted">No tags added yet.</div>`;
+        return;
+      }
 
-// SHOPPING
-function buildShopping(){
-let items=[];
-week.forEach(m=>{
-(m.ingredients||[]).forEach(i=>items.push(i));
-});
-let unique=[...new Set(items)];
-shopList.innerHTML = unique.map(i=>`<div>${i}</div>`).join("");
-}
+      draftTags.forEach((tag, index) => {
+        const chip = document.createElement("span");
+        chip.className = "tag-chip tag-general";
+        chip.innerHTML = `${escapeHtml(tag)} <button type="button" aria-label="Remove tag">×</button>`;
+        chip.querySelector("button").addEventListener("click", () => {
+          draftTags.splice(index, 1);
+          renderDraftTags();
+        });
+        selectedTagsEl.appendChild(chip);
+      });
+    }
 
-// EXTRA
-function addExtra(){
-extras.push(extraItem.value);
-extraItem.value="";
-extraList.innerHTML = extras.map(e=>`<div>${e}</div>`).join("");
-}
+    function renderDraftIngredients() {
+      ingredientListDraftEl.innerHTML = "";
+      if (!draftIngredients.length) {
+        ingredientListDraftEl.innerHTML = `<div class="muted">No ingredients added yet.</div>`;
+        return;
+      }
 
-// INIT
-loadMeals();
-loadWeek();
-</script>
+      draftIngredients.forEach((ingredient, index) => {
+        const chip = document.createElement("span");
+        chip.className = "ingredient-chip";
+        chip.innerHTML = `${escapeHtml(ingredient)} <button type="button" aria-label="Remove ingredient">×</button>`;
+        chip.querySelector("button").addEventListener("click", () => {
+          draftIngredients.splice(index, 1);
+          renderDraftIngredients();
+        });
+        ingredientListDraftEl.appendChild(chip);
+      });
+    }
 
+    function addTag() {
+      const value = normaliseText(tagInput.value);
+      if (!value) return;
+      if (draftTags.length >= 2) {
+        alert("You can add up to 2 tags per meal.");
+        return;
+      }
+      if (draftTags.some(tag => tag.toLowerCase() === value.toLowerCase())) {
+        tagInput.value = "";
+        return;
+      }
+      draftTags.push(value);
+      tagInput.value = "";
+      renderDraftTags();
+    }
+
+    function addIngredient() {
+      const value = normaliseText(ingredientInput.value);
+      if (!value) return;
+      draftIngredients.push(value);
+      ingredientInput.value = "";
+      renderDraftIngredients();
+    }
+
+    document.getElementById("addTagBtn").addEventListener("click", addTag);
+    document.getElementById("addIngredientBtn").addEventListener("click", addIngredient);
+
+    tagInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addTag();
+      }
+    });
+
+    ingredientInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addIngredient();
+      }
+    });
+
+    extraItemInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addExtraItem();
+      }
+    });
+
+    function resetEditState() {
+      editingMealId = null;
+      editingBannerEl.style.display = "none";
+      editingBannerEl.textContent = "";
+      cancelEditBtn.style.display = "none";
+      saveMealBtn.textContent = "Save meal";
+    }
+
+    function clearDraft() {
+      mealTitleInput.value = "";
+      costBandInput.value = "medium";
+      mealCostInput.value = "";
+      tagInput.value = "";
+      ingredientInput.value = "";
+      draftTags = [];
+      draftIngredients = [];
+      renderDraftTags();
+      renderDraftIngredients();
+      resetEditState();
+    }
+
+    document.getElementById("clearDraftBtn").addEventListener("click", clearDraft);
+    cancelEditBtn.addEventListener("click", clearDraft);
+
+    function startEditMeal(mealId) {
+      const meal = meals.find(item => item.id === mealId);
+      if (!meal) return;
+
+      editingMealId = meal.id;
+      mealTitleInput.value = meal.title || "";
+      costBandInput.value = meal.costBand || "medium";
+      mealCostInput.value = Number(meal.estimatedCost || 0);
+      draftTags = [...(meal.tags || [])];
+      draftIngredients = [...(meal.ingredients || [])];
+
+      renderDraftTags();
+      renderDraftIngredients();
+
+      editingBannerEl.textContent = `Editing: ${meal.title}`;
+      editingBannerEl.style.display = "block";
+      cancelEditBtn.style.display = "inline-block";
+      saveMealBtn.textContent = "Update meal";
+
+      switchScreen("meals");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function saveMeal() {
+      const title = normaliseText(mealTitleInput.value);
+      const costBand = costBandInput.value;
+      const estimatedCost = parseFloat(mealCostInput.value || "0");
+
+      if (!title) {
+        alert("Add a meal title.");
+        return;
+      }
+
+      if (!draftIngredients.length) {
+        alert("Add at least one ingredient.");
+        return;
+      }
+
+      const meal = {
+        id: editingMealId || uid(),
+        title,
+        costBand,
+        estimatedCost: Number.isFinite(estimatedCost) ? estimatedCost : 0,
+        tags: [...draftTags],
+        ingredients: [...draftIngredients]
+      };
+
+      if (editingMealId) {
+        meals = meals.map(item => item.id === editingMealId ? meal : item);
+        currentPlan = currentPlan.map(item => item.id === editingMealId ? meal : item);
+      } else {
+        meals.unshift(meal);
+      }
+
+      save(STORAGE_KEYS.meals, meals);
+      save(STORAGE_KEYS.plan, currentPlan);
+      renderMeals();
+      renderPlan();
+      renderShoppingList();
+      renderTagSuggestions();
+      clearDraft();
+    }
+
+    document.getElementById("saveMealBtn").addEventListener("click", saveMeal);
+
+    function deleteMeal(mealId) {
+      meals = meals.filter(meal => meal.id !== mealId);
+      currentPlan = currentPlan.filter(meal => meal.id !== mealId);
+      if (editingMealId === mealId) {
+        clearDraft();
+      }
+      save(STORAGE_KEYS.meals, meals);
+      save(STORAGE_KEYS.plan, currentPlan);
+      renderMeals();
+      renderPlan();
+      renderShoppingList();
+      renderTagSuggestions();
+    }
+
+    function renderMeals() {
+      if (!meals.length) {
+        mealsListEl.innerHTML = `<div class="empty">No meals saved yet.</div>`;
+        return;
+      }
+
+      mealsListEl.innerHTML = meals.map(meal => `
+        <div class="card meal-card">
+          <h3>${escapeHtml(meal.title)}</h3>
+          <div class="tag-chip-wrap">
+            ${renderCostTag(meal.costBand)}
+            ${(meal.tags || []).map(tag => `<span class="tag-chip tag-general">${escapeHtml(tag)}</span>`).join("")}
+          </div>
+          <div class="meta-line">Estimated cost: £${Number(meal.estimatedCost || 0).toFixed(2)}</div>
+          <div class="meta-line">Ingredients: ${(meal.ingredients || []).map(escapeHtml).join(", ")}</div>
+          <div class="actions">
+            <button type="button" class="btn-secondary" data-edit-meal="${meal.id}">Edit</button>
+            <button type="button" class="btn-danger" data-delete-meal="${meal.id}">Delete</button>
+          </div>
+        </div>
+      `).join("");
+
+      mealsListEl.querySelectorAll("[data-delete-meal]").forEach(btn => {
+        btn.addEventListener("click", () => deleteMeal(btn.dataset.deleteMeal));
+      });
+
+      mealsListEl.querySelectorAll("[data-edit-meal]").forEach(btn => {
+        btn.addEventListener("click", () => startEditMeal(btn.dataset.editMeal));
+      });
+    }
+
+    function renderCostTag(costBand) {
+      const clean = costBand || "medium";
+      const label = clean === "low" ? "Low cost" : clean === "high" ? "Higher cost" : "Medium cost";
+      const cls = clean === "low" ? "tag-cost-low" : clean === "high" ? "tag-cost-high" : "tag-cost-medium";
+      return `<span class="tag-chip ${cls}">${label}</span>`;
+    }
+
+    function generateWeek() {
+      if (meals.length < 7) {
+        alert("Add at least 7 meals first so the week can be varied properly.");
+        return;
+      }
+
+      const budget = parseFloat(weeklyBudgetInput.value || "0");
+      const tryCount = 300;
+      let bestPlan = null;
+      let bestScore = -Infinity;
+
+      for (let attempt = 0; attempt < tryCount; attempt++) {
+        const pool = shuffle([...meals]);
+        const plan = [];
+        const usedIds = new Set();
+
+        while (plan.length < 7) {
+          const previousMeal = plan[plan.length - 1];
+          const candidates = pool.filter(meal => !usedIds.has(meal.id));
+
+          if (!candidates.length) break;
+
+          candidates.sort((a, b) => scoreMealForPosition(b, previousMeal, plan, budget) - scoreMealForPosition(a, previousMeal, plan, budget));
+
+          const topSlice = candidates.slice(0, Math.min(5, candidates.length));
+          const chosen = topSlice[Math.floor(Math.random() * topSlice.length)];
+
+          plan.push(chosen);
+          usedIds.add(chosen.id);
+        }
+
+        if (plan.length === 7) {
+          const totalScore = scoreWholePlan(plan, budget);
+          if (totalScore > bestScore) {
+            bestScore = totalScore;
+            bestPlan = plan;
+          }
+        }
+      }
+
+      if (!bestPlan) {
+        alert("Could not build a full week. Add more varied meals and try again.");
+        return;
+      }
+
+      currentPlan = bestPlan;
+      shoppingChecks = {};
+      extraItems = [];
+      save(STORAGE_KEYS.plan, currentPlan);
+      save(STORAGE_KEYS.checks, shoppingChecks);
+      save(STORAGE_KEYS.extras, extraItems);
+      renderPlan();
+      renderShoppingList();
+      renderExtraItems();
+      switchScreen("plan");
+    }
+
+    function scoreMealForPosition(meal, previousMeal, partialPlan, budget) {
+      let score = Math.random() * 10;
+
+      if (!previousMeal) {
+        score += 20;
+      } else {
+        const overlap = countSharedTags(meal.tags, previousMeal.tags);
+        score -= overlap * 35;
+
+        if (meal.costBand === previousMeal.costBand) {
+          score -= 6;
+        }
+      }
+
+      const currentTagCounts = getTagCounts(partialPlan);
+      (meal.tags || []).forEach(tag => {
+        const used = currentTagCounts[tag.toLowerCase()] || 0;
+        score -= used * 12;
+      });
+
+      const currentCostCounts = getCostCounts(partialPlan);
+      const mealCost = meal.costBand || "medium";
+      score -= (currentCostCounts[mealCost] || 0) * 5;
+
+      if (budget > 0) {
+        const currentCost = partialPlan.reduce((sum, item) => sum + Number(item.estimatedCost || 0), 0);
+        const projected = currentCost + Number(meal.estimatedCost || 0);
+        const targetPerMeal = budget / 7;
+
+        if (mealCost === "high" && projected > budget) score -= 25;
+        if (Math.abs(Number(meal.estimatedCost || 0) - targetPerMeal) < targetPerMeal * 0.35) score += 6;
+      }
+
+      return score;
+    }
+
+    function scoreWholePlan(plan, budget) {
+      let score = 100;
+
+      for (let i = 1; i < plan.length; i++) {
+        const overlap = countSharedTags(plan[i].tags, plan[i - 1].tags);
+        score -= overlap * 40;
+        if ((plan[i].costBand || "") === (plan[i - 1].costBand || "")) {
+          score -= 4;
+        }
+      }
+
+      const tagCounts = getTagCounts(plan);
+      Object.values(tagCounts).forEach(count => {
+        if (count > 2) score -= (count - 2) * 10;
+      });
+
+      const totalCost = plan.reduce((sum, meal) => sum + Number(meal.estimatedCost || 0), 0);
+
+      if (budget > 0) {
+        const diff = Math.abs(totalCost - budget);
+        score -= diff * 1.8;
+      }
+
+      return score;
+    }
+
+    function countSharedTags(a = [], b = []) {
+      const setA = new Set((a || []).map(item => item.toLowerCase()));
+      return (b || []).filter(item => setA.has(item.toLowerCase())).length;
+    }
+
+    function getTagCounts(plan) {
+      const counts = {};
+      plan.forEach(meal => {
+        (meal.tags || []).forEach(tag => {
+          const key = tag.toLowerCase();
+          counts[key] = (counts[key] || 0) + 1;
+        });
+      });
+      return counts;
+    }
+
+    function getCostCounts(plan) {
+      const counts = {};
+      plan.forEach(meal => {
+        const key = meal.costBand || "medium";
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      return counts;
+    }
+
+    document.getElementById("generateWeekBtn").addEventListener("click", generateWeek);
+
+    document.getElementById("clearWeekBtn").addEventListener("click", () => {
+      currentPlan = [];
+      shoppingChecks = {};
+      extraItems = [];
+      save(STORAGE_KEYS.plan, currentPlan);
+      save(STORAGE_KEYS.checks, shoppingChecks);
+      save(STORAGE_KEYS.extras, extraItems);
+      renderPlan();
+      renderShoppingList();
+      renderExtraItems();
+    });
+
+    function moveMeal(index, direction) {
+      const swapIndex = index + direction;
+      if (swapIndex < 0 || swapIndex >= currentPlan.length) return;
+      [currentPlan[index], currentPlan[swapIndex]] = [currentPlan[swapIndex], currentPlan[index]];
+      save(STORAGE_KEYS.plan, currentPlan);
+      renderPlan();
+      renderShoppingList();
+    }
+
+    function swapMeal(index) {
+      const currentMeal = currentPlan[index];
+      const previousMeal = currentPlan[index - 1] || null;
+      const nextMeal = currentPlan[index + 1] || null;
+      const usedIds = new Set(currentPlan.map(meal => meal.id));
+
+      let options = meals.filter(meal => meal.id !== currentMeal.id && !usedIds.has(meal.id));
+
+      options = options.filter(meal => {
+        if (previousMeal && countSharedTags(meal.tags, previousMeal.tags) > 0) return false;
+        if (nextMeal && countSharedTags(meal.tags, nextMeal.tags) > 0) return false;
+        return true;
+      });
+
+      if (!options.length) {
+        options = meals.filter(meal => meal.id !== currentMeal.id);
+      }
+
+      if (!options.length) {
+        alert("No swap options available.");
+        return;
+      }
+
+      const replacement = options[Math.floor(Math.random() * options.length)];
+      currentPlan[index] = replacement;
+      save(STORAGE_KEYS.plan, currentPlan);
+      renderPlan();
+      renderShoppingList();
+    }
+
+    function renderPlan() {
+      if (!currentPlan.length) {
+        planListEl.innerHTML = `<div class="empty">No week generated yet.</div>`;
+        updateSummary();
+        return;
+      }
+
+      planListEl.innerHTML = currentPlan.map((meal, index) => `
+        <div class="card plan-card">
+          <div class="day-label">${DAYS[index]}</div>
+          <h3>${escapeHtml(meal.title)}</h3>
+          <div class="tag-chip-wrap">
+            ${renderCostTag(meal.costBand)}
+            ${(meal.tags || []).map(tag => `<span class="tag-chip tag-general">${escapeHtml(tag)}</span>`).join("")}
+          </div>
+          <div class="meta-line">Estimated cost: £${Number(meal.estimatedCost || 0).toFixed(2)}</div>
+          <div class="meta-line">Ingredients: ${(meal.ingredients || []).map(escapeHtml).join(", ")}</div>
+          <div class="actions">
+            <button type="button" class="btn-ghost" data-move-up="${index}">Move up</button>
+            <button type="button" class="btn-ghost" data-move-down="${index}">Move down</button>
+            <button type="button" class="btn-secondary" data-swap="${index}">Swap meal</button>
+          </div>
+        </div>
+      `).join("");
+
+      planListEl.querySelectorAll("[data-move-up]").forEach(btn => {
+        btn.addEventListener("click", () => moveMeal(Number(btn.dataset.moveUp), -1));
+      });
+
+      planListEl.querySelectorAll("[data-move-down]").forEach(btn => {
+        btn.addEventListener("click", () => moveMeal(Number(btn.dataset.moveDown), 1));
+      });
+
+      planListEl.querySelectorAll("[data-swap]").forEach(btn => {
+        btn.addEventListener("click", () => swapMeal(Number(btn.dataset.swap)));
+      });
+
+      updateSummary();
+    }
+
+    function updateSummary() {
+      const mealCount = currentPlan.length;
+      const totalCost = currentPlan.reduce((sum, meal) => sum + Number(meal.estimatedCost || 0), 0);
+      summaryMealsEl.textContent = `${mealCount} ${mealCount === 1 ? "meal" : "meals"}`;
+      summaryCostEl.textContent = `£${totalCost.toFixed(2)}`;
+    }
+
+    function renderShoppingList() {
+      if (!currentPlan.length) {
+        shoppingListEl.innerHTML = `<div class="empty">Generate a week first to build the shopping list.</div>`;
+        return;
+      }
+
+      const counts = {};
+      currentPlan.forEach(meal => {
+        (meal.ingredients || []).forEach(item => {
+          const clean = normaliseText(item);
+          if (!clean) return;
+          const key = clean.toLowerCase();
+          counts[key] = {
+            label: clean,
+            count: (counts[key]?.count || 0) + 1,
+            type: "main"
+          };
+        });
+      });
+
+      const items = Object.values(counts).sort((a, b) => a.label.localeCompare(b.label));
+
+      shoppingListEl.innerHTML = items.map(item => {
+        const key = `main:${item.label.toLowerCase()}`;
+        const checked = !!shoppingChecks[key];
+        return `
+          <label class="shopping-item ${checked ? "checked" : ""}">
+            <input type="checkbox" data-check-item="${escapeHtmlAttr(key)}" ${checked ? "checked" : ""} />
+            <span>${escapeHtml(item.label)}${item.count > 1 ? ` <span class="tiny">(x${item.count})</span>` : ""}</span>
+          </label>
+        `;
+      }).join("");
+
+      shoppingListEl.querySelectorAll("[data-check-item]").forEach(input => {
+        input.addEventListener("change", () => {
+          const key = input.dataset.checkItem;
+          shoppingChecks[key] = input.checked;
+          save(STORAGE_KEYS.checks, shoppingChecks);
+          renderShoppingList();
+          renderExtraItems();
+        });
+      });
+    }
+
+    function addExtraItem() {
+      const value = normaliseText(extraItemInput.value);
+      if (!value) return;
+
+      extraItems.push({
+        id: uid(),
+        label: value
+      });
+
+      extraItemInput.value = "";
+      save(STORAGE_KEYS.extras, extraItems);
+      renderExtraItems();
+    }
+
+    document.getElementById("addExtraItemBtn").addEventListener("click", addExtraItem);
+
+    function deleteExtraItem(id) {
+      extraItems = extraItems.filter(item => item.id !== id);
+      delete shoppingChecks[`extra:${id}`];
+      save(STORAGE_KEYS.extras, extraItems);
+      save(STORAGE_KEYS.checks, shoppingChecks);
+      renderExtraItems();
+    }
+
+    function renderExtraItems() {
+      if (!extraItems.length) {
+        extraItemsListEl.innerHTML = `<div class="muted">No extra items added.</div>`;
+        return;
+      }
+
+      extraItemsListEl.innerHTML = extraItems.map(item => {
+        const key = `extra:${item.id}`;
+        const checked = !!shoppingChecks[key];
+        return `
+          <div class="shopping-item ${checked ? "checked" : ""}">
+            <input type="checkbox" data-check-item="${escapeHtmlAttr(key)}" ${checked ? "checked" : ""} />
+            <span style="flex:1;">${escapeHtml(item.label)}</span>
+            <button type="button" class="btn-danger" data-delete-extra="${item.id}" style="padding:6px 10px; font-size:12px; border-radius:10px;">Delete</button>
+          </div>
+        `;
+      }).join("");
+
+      extraItemsListEl.querySelectorAll("[data-check-item]").forEach(input => {
+        input.addEventListener("change", () => {
+          const key = input.dataset.checkItem;
+          shoppingChecks[key] = input.checked;
+          save(STORAGE_KEYS.checks, shoppingChecks);
+          renderExtraItems();
+        });
+      });
+
+      extraItemsListEl.querySelectorAll("[data-delete-extra]").forEach(btn => {
+        btn.addEventListener("click", () => deleteExtraItem(btn.dataset.deleteExtra));
+      });
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function addExampleMeals() {
+      const exampleMeals = [
+        {
+          id: uid(),
+          title: "Spaghetti Bolognese",
+          costBand: "medium",
+          estimatedCost: 8.5,
+          tags: ["pasta", "beef"],
+          ingredients: ["spaghetti", "mince", "passata", "onion", "garlic"]
+        },
+        {
+          id: uid(),
+          title: "Chicken Fajitas",
+          costBand: "medium",
+          estimatedCost: 9.0,
+          tags: ["chicken", "wraps"],
+          ingredients: ["wraps", "chicken", "peppers", "onion", "fajita seasoning"]
+        },
+        {
+          id: uid(),
+          title: "Sausage Tray Bake",
+          costBand: "low",
+          estimatedCost: 6.5,
+          tags: ["tray bake", "sausage"],
+          ingredients: ["sausages", "potatoes", "red onion", "peppers"]
+        },
+        {
+          id: uid(),
+          title: "Vegetable Curry",
+          costBand: "low",
+          estimatedCost: 5.8,
+          tags: ["curry", "vegetarian"],
+          ingredients: ["rice", "coconut milk", "curry paste", "chickpeas", "spinach"]
+        },
+        {
+          id: uid(),
+          title: "Salmon Rice Bowls",
+          costBand: "high",
+          estimatedCost: 11.5,
+          tags: ["fish", "rice"],
+          ingredients: ["salmon", "rice", "broccoli", "soy sauce", "spring onions"]
+        },
+        {
+          id: uid(),
+          title: "Chicken Pasta Bake",
+          costBand: "medium",
+          estimatedCost: 8.8,
+          tags: ["pasta", "chicken"],
+          ingredients: ["pasta", "chicken", "cheese", "passata", "sweetcorn"]
+        },
+        {
+          id: uid(),
+          title: "Beef Chilli",
+          costBand: "medium",
+          estimatedCost: 8.2,
+          tags: ["beef", "rice"],
+          ingredients: ["mince", "rice", "kidney beans", "tomatoes", "onion"]
+        },
+        {
+          id: uid(),
+          title: "Halloumi Wraps",
+          costBand: "medium",
+          estimatedCost: 7.4,
+          tags: ["wraps", "vegetarian"],
+          ingredients: ["wraps", "halloumi", "lettuce", "tomatoes", "yoghurt"]
+        }
+      ];
+
+      meals = exampleMeals;
+      currentPlan = [];
+      shoppingChecks = {};
+      extraItems = [];
+      save(STORAGE_KEYS.meals, meals);
+      save(STORAGE_KEYS.plan, currentPlan);
+      save(STORAGE_KEYS.checks, shoppingChecks);
+      save(STORAGE_KEYS.extras, extraItems);
+      renderMeals();
+      renderPlan();
+      renderShoppingList();
+      renderExtraItems();
+      renderTagSuggestions();
+      clearDraft();
+      alert("Example meals added.");
+    }
+
+    document.getElementById("exampleMealsBtn").addEventListener("click", addExampleMeals);
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function escapeHtmlAttr(value) {
+      return escapeHtml(value);
+    }
+
+    renderDraftTags();
+    renderDraftIngredients();
+    renderMeals();
+    renderPlan();
+    renderShoppingList();
+    renderExtraItems();
+    renderTagSuggestions();
+  </script>
 </body>
 </html>
