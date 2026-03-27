@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meal Planner</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #f6f7fb;
@@ -90,6 +91,13 @@
       font-size: 0.95rem;
     }
 
+    .status {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
     label {
       display: block;
       font-size: 0.92rem;
@@ -98,8 +106,7 @@
     }
 
     input,
-    select,
-    textarea {
+    select {
       width: 100%;
       border: 1px solid var(--line);
       border-radius: 14px;
@@ -111,8 +118,7 @@
     }
 
     input:focus,
-    select:focus,
-    textarea:focus {
+    select:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
     }
@@ -418,6 +424,11 @@
       margin-bottom: 12px;
       font-size: 0.92rem;
       font-weight: 700;
+      display: none;
+    }
+
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
@@ -432,7 +443,7 @@
       <div class="card">
         <h2 class="section-title">Add Meal</h2>
 
-        <div id="editingBanner" class="editing-banner" style="display:none;"></div>
+        <div id="editingBanner" class="editing-banner"></div>
 
         <label for="mealTitle">Meal title</label>
         <input id="mealTitle" type="text" placeholder="Example: Chicken fajitas" />
@@ -447,7 +458,7 @@
             </select>
           </div>
           <div>
-            <label for="mealCost">Estimated cost (£)</label>
+            <label for="mealCost">Estimated cost (Â£)</label>
             <input id="mealCost" type="number" min="0" step="0.01" placeholder="8.50" />
           </div>
         </div>
@@ -472,8 +483,10 @@
           <button type="button" class="btn-primary" id="saveMealBtn">Save meal</button>
           <button type="button" class="btn-secondary" id="exampleMealsBtn">Add example meals</button>
           <button type="button" class="btn-ghost" id="clearDraftBtn">Clear form</button>
-          <button type="button" class="btn-danger" id="cancelEditBtn" style="display:none;">Cancel edit</button>
+          <button type="button" class="btn-danger hidden" id="cancelEditBtn">Cancel edit</button>
         </div>
+
+        <div id="mealStatus" class="status"></div>
       </div>
 
       <div class="card">
@@ -485,7 +498,7 @@
     <section id="screen-plan" class="screen">
       <div class="card">
         <h2 class="section-title">Generate Week</h2>
-        <label for="weeklyBudget">Weekly budget (£), optional</label>
+        <label for="weeklyBudget">Weekly budget (Â£), optional</label>
         <input id="weeklyBudget" type="number" min="0" step="0.01" placeholder="50" />
         <div class="btn-row">
           <button type="button" class="btn-primary" id="generateWeekBtn">Generate week</button>
@@ -498,10 +511,12 @@
             <span class="tiny">Generated this week</span>
           </div>
           <div class="summary-box">
-            <strong id="summaryCost">£0.00</strong>
+            <strong id="summaryCost">Â£0.00</strong>
             <span class="tiny">Estimated total</span>
           </div>
         </div>
+
+        <div id="planStatus" class="status"></div>
       </div>
 
       <div class="card">
@@ -533,19 +548,17 @@
   </nav>
 
   <script>
-    const STORAGE_KEYS = {
-      meals: "mealPlanner_meals_v3",
-      plan: "mealPlanner_plan_v3",
-      checks: "mealPlanner_checks_v3",
-      extras: "mealPlanner_extras_v3"
-    };
-
+    const SUPABASE_URL = "https://njhgiitbtvsbudarsmbk.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_AHbuYoScuVzZ6jgAkQMMpg_eZRPn6v0";
+    const CURRENT_WEEK_KEY = "current";
     const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-    let meals = load(STORAGE_KEYS.meals, []);
-    let currentPlan = load(STORAGE_KEYS.plan, []);
-    let shoppingChecks = load(STORAGE_KEYS.checks, {});
-    let extraItems = load(STORAGE_KEYS.extras, []);
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let meals = [];
+    let currentPlan = [];
+    let shoppingChecks = {};
+    let extraItems = [];
     let draftIngredients = [];
     let draftTags = [];
     let editingMealId = null;
@@ -556,6 +569,7 @@
     const tagInput = document.getElementById("tagInput");
     const ingredientInput = document.getElementById("ingredientInput");
     const extraItemInput = document.getElementById("extraItemInput");
+    const weeklyBudgetInput = document.getElementById("weeklyBudget");
 
     const selectedTagsEl = document.getElementById("selectedTags");
     const ingredientListDraftEl = document.getElementById("ingredientListDraft");
@@ -564,30 +578,13 @@
     const shoppingListEl = document.getElementById("shoppingList");
     const extraItemsListEl = document.getElementById("extraItemsList");
     const tagSuggestionsEl = document.getElementById("tagSuggestions");
-    const weeklyBudgetInput = document.getElementById("weeklyBudget");
-
     const summaryMealsEl = document.getElementById("summaryMeals");
     const summaryCostEl = document.getElementById("summaryCost");
     const editingBannerEl = document.getElementById("editingBanner");
     const cancelEditBtn = document.getElementById("cancelEditBtn");
     const saveMealBtn = document.getElementById("saveMealBtn");
-
-    function load(key, fallback) {
-      try {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-      } catch {
-        return fallback;
-      }
-    }
-
-    function save(key, value) {
-      localStorage.setItem(key, JSON.stringify(value));
-    }
-
-    function uid() {
-      return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    }
+    const mealStatus = document.getElementById("mealStatus");
+    const planStatus = document.getElementById("planStatus");
 
     function normaliseText(value) {
       return String(value || "").trim().replace(/\s+/g, " ");
@@ -602,6 +599,19 @@
         if (!map.has(lower)) map.set(lower, clean);
       });
       return [...map.values()];
+    }
+
+    function setStatus(el, text = "") {
+      el.textContent = text;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
     function switchScreen(name) {
@@ -631,7 +641,7 @@
       draftTags.forEach((tag, index) => {
         const chip = document.createElement("span");
         chip.className = "tag-chip tag-general";
-        chip.innerHTML = `${escapeHtml(tag)} <button type="button" aria-label="Remove tag">×</button>`;
+        chip.innerHTML = `${escapeHtml(tag)} <button type="button" aria-label="Remove tag">Ã</button>`;
         chip.querySelector("button").addEventListener("click", () => {
           draftTags.splice(index, 1);
           renderDraftTags();
@@ -650,7 +660,7 @@
       draftIngredients.forEach((ingredient, index) => {
         const chip = document.createElement("span");
         chip.className = "ingredient-chip";
-        chip.innerHTML = `${escapeHtml(ingredient)} <button type="button" aria-label="Remove ingredient">×</button>`;
+        chip.innerHTML = `${escapeHtml(ingredient)} <button type="button" aria-label="Remove ingredient">Ã</button>`;
         chip.querySelector("button").addEventListener("click", () => {
           draftIngredients.splice(index, 1);
           renderDraftIngredients();
@@ -711,7 +721,7 @@
       editingMealId = null;
       editingBannerEl.style.display = "none";
       editingBannerEl.textContent = "";
-      cancelEditBtn.style.display = "none";
+      cancelEditBtn.classList.add("hidden");
       saveMealBtn.textContent = "Save meal";
     }
 
@@ -726,10 +736,92 @@
       renderDraftTags();
       renderDraftIngredients();
       resetEditState();
+      setStatus(mealStatus, "");
     }
 
     document.getElementById("clearDraftBtn").addEventListener("click", clearDraft);
     cancelEditBtn.addEventListener("click", clearDraft);
+
+    function renderCostTag(costBand) {
+      const clean = costBand || "medium";
+      const label = clean === "low" ? "Low cost" : clean === "high" ? "Higher cost" : "Medium cost";
+      const cls = clean === "low" ? "tag-cost-low" : clean === "high" ? "tag-cost-high" : "tag-cost-medium";
+      return `<span class="tag-chip ${cls}">${label}</span>`;
+    }
+
+    async function loadMeals() {
+      const { data, error } = await supabase
+        .from("meals")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      meals = data || [];
+    }
+
+    async function loadWeeklyPlan() {
+      const { data, error } = await supabase
+        .from("weekly_plan")
+        .select("day_name, meal_id, meals(*)")
+        .eq("week_key", CURRENT_WEEK_KEY);
+
+      if (error) throw error;
+
+      const rows = data || [];
+      currentPlan = DAYS.map(day => {
+        const row = rows.find(item => item.day_name === day);
+        return row && row.meals ? row.meals : null;
+      }).filter(Boolean);
+    }
+
+    async function loadShoppingChecks() {
+      const { data, error } = await supabase
+        .from("shopping_checks")
+        .select("*")
+        .eq("week_key", CURRENT_WEEK_KEY);
+
+      if (error) throw error;
+
+      shoppingChecks = {};
+      (data || []).forEach(item => {
+        shoppingChecks[item.item_key] = item.checked;
+      });
+    }
+
+    async function loadExtraItems() {
+      const { data, error } = await supabase
+        .from("shopping_extra_items")
+        .select("*")
+        .eq("week_key", CURRENT_WEEK_KEY)
+        .order("label", { ascending: true });
+
+      if (error) throw error;
+      extraItems = data || [];
+    }
+
+    async function loadAllData() {
+      setStatus(mealStatus, "Loading...");
+      setStatus(planStatus, "Loading...");
+
+      try {
+        await loadMeals();
+        await loadWeeklyPlan();
+        await loadShoppingChecks();
+        await loadExtraItems();
+
+        renderMeals();
+        renderPlan();
+        renderShoppingList();
+        renderExtraItems();
+        renderTagSuggestions();
+
+        setStatus(mealStatus, "");
+        setStatus(planStatus, "");
+      } catch (error) {
+        setStatus(mealStatus, error.message || "Error loading data.");
+        setStatus(planStatus, error.message || "Error loading data.");
+      }
+    }
 
     function startEditMeal(mealId) {
       const meal = meals.find(item => item.id === mealId);
@@ -737,8 +829,8 @@
 
       editingMealId = meal.id;
       mealTitleInput.value = meal.title || "";
-      costBandInput.value = meal.costBand || "medium";
-      mealCostInput.value = Number(meal.estimatedCost || 0);
+      costBandInput.value = meal.cost_band || "medium";
+      mealCostInput.value = Number(meal.estimated_cost || 0);
       draftTags = [...(meal.tags || [])];
       draftIngredients = [...(meal.ingredients || [])];
 
@@ -747,14 +839,14 @@
 
       editingBannerEl.textContent = `Editing: ${meal.title}`;
       editingBannerEl.style.display = "block";
-      cancelEditBtn.style.display = "inline-block";
+      cancelEditBtn.classList.remove("hidden");
       saveMealBtn.textContent = "Update meal";
 
       switchScreen("meals");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    function saveMeal() {
+    async function saveMeal() {
       const title = normaliseText(mealTitleInput.value);
       const costBand = costBandInput.value;
       const estimatedCost = parseFloat(mealCostInput.value || "0");
@@ -769,45 +861,50 @@
         return;
       }
 
-      const meal = {
-        id: editingMealId || uid(),
+      const payload = {
         title,
-        costBand,
-        estimatedCost: Number.isFinite(estimatedCost) ? estimatedCost : 0,
+        cost_band: costBand,
+        estimated_cost: Number.isFinite(estimatedCost) ? estimatedCost : 0,
         tags: [...draftTags],
         ingredients: [...draftIngredients]
       };
 
+      setStatus(mealStatus, "Saving...");
+
+      let error;
       if (editingMealId) {
-        meals = meals.map(item => item.id === editingMealId ? meal : item);
-        currentPlan = currentPlan.map(item => item.id === editingMealId ? meal : item);
+        ({ error } = await supabase.from("meals").update(payload).eq("id", editingMealId));
       } else {
-        meals.unshift(meal);
+        ({ error } = await supabase.from("meals").insert(payload));
       }
 
-      save(STORAGE_KEYS.meals, meals);
-      save(STORAGE_KEYS.plan, currentPlan);
-      renderMeals();
-      renderPlan();
-      renderShoppingList();
-      renderTagSuggestions();
+      if (error) {
+        setStatus(mealStatus, error.message);
+        return;
+      }
+
       clearDraft();
+      await loadAllData();
+      setStatus(mealStatus, "Saved.");
+      setTimeout(() => setStatus(mealStatus, ""), 1500);
     }
 
     document.getElementById("saveMealBtn").addEventListener("click", saveMeal);
 
-    function deleteMeal(mealId) {
-      meals = meals.filter(meal => meal.id !== mealId);
-      currentPlan = currentPlan.filter(meal => meal.id !== mealId);
-      if (editingMealId === mealId) {
-        clearDraft();
+    async function deleteMeal(mealId) {
+      const ok = confirm("Delete this meal?");
+      if (!ok) return;
+
+      await supabase.from("weekly_plan").delete().eq("meal_id", mealId);
+      const { error } = await supabase.from("meals").delete().eq("id", mealId);
+
+      if (error) {
+        alert(error.message);
+        return;
       }
-      save(STORAGE_KEYS.meals, meals);
-      save(STORAGE_KEYS.plan, currentPlan);
-      renderMeals();
-      renderPlan();
-      renderShoppingList();
-      renderTagSuggestions();
+
+      if (editingMealId === mealId) clearDraft();
+      await loadAllData();
     }
 
     function renderMeals() {
@@ -820,10 +917,10 @@
         <div class="card meal-card">
           <h3>${escapeHtml(meal.title)}</h3>
           <div class="tag-chip-wrap">
-            ${renderCostTag(meal.costBand)}
+            ${renderCostTag(meal.cost_band)}
             ${(meal.tags || []).map(tag => `<span class="tag-chip tag-general">${escapeHtml(tag)}</span>`).join("")}
           </div>
-          <div class="meta-line">Estimated cost: £${Number(meal.estimatedCost || 0).toFixed(2)}</div>
+          <div class="meta-line">Estimated cost: Â£${Number(meal.estimated_cost || 0).toFixed(2)}</div>
           <div class="meta-line">Ingredients: ${(meal.ingredients || []).map(escapeHtml).join(", ")}</div>
           <div class="actions">
             <button type="button" class="btn-secondary" data-edit-meal="${meal.id}">Edit</button>
@@ -841,26 +938,136 @@
       });
     }
 
-    function renderCostTag(costBand) {
-      const clean = costBand || "medium";
-      const label = clean === "low" ? "Low cost" : clean === "high" ? "Higher cost" : "Medium cost";
-      const cls = clean === "low" ? "tag-cost-low" : clean === "high" ? "tag-cost-high" : "tag-cost-medium";
-      return `<span class="tag-chip ${cls}">${label}</span>`;
+    function countSharedTags(a = [], b = []) {
+      const setA = new Set((a || []).map(item => item.toLowerCase()));
+      return (b || []).filter(item => setA.has(item.toLowerCase())).length;
     }
 
-    function generateWeek() {
+    function getTagCounts(plan) {
+      const counts = {};
+      plan.forEach(meal => {
+        (meal.tags || []).forEach(tag => {
+          const key = tag.toLowerCase();
+          counts[key] = (counts[key] || 0) + 1;
+        });
+      });
+      return counts;
+    }
+
+    function getCostCounts(plan) {
+      const counts = {};
+      plan.forEach(meal => {
+        const key = meal.cost_band || "medium";
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      return counts;
+    }
+
+    function shuffle(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function scoreMealForPosition(meal, previousMeal, partialPlan, budget) {
+      let score = Math.random() * 10;
+
+      if (!previousMeal) {
+        score += 20;
+      } else {
+        const overlap = countSharedTags(meal.tags, previousMeal.tags);
+        score -= overlap * 35;
+
+        if (meal.cost_band === previousMeal.cost_band) {
+          score -= 6;
+        }
+      }
+
+      const currentTagCounts = getTagCounts(partialPlan);
+      (meal.tags || []).forEach(tag => {
+        const used = currentTagCounts[tag.toLowerCase()] || 0;
+        score -= used * 12;
+      });
+
+      const currentCostCounts = getCostCounts(partialPlan);
+      const mealCost = meal.cost_band || "medium";
+      score -= (currentCostCounts[mealCost] || 0) * 5;
+
+      if (budget > 0) {
+        const currentCost = partialPlan.reduce((sum, item) => sum + Number(item.estimated_cost || 0), 0);
+        const projected = currentCost + Number(meal.estimated_cost || 0);
+        const targetPerMeal = budget / 7;
+
+        if (mealCost === "high" && projected > budget) score -= 25;
+        if (Math.abs(Number(meal.estimated_cost || 0) - targetPerMeal) < targetPerMeal * 0.35) score += 6;
+      }
+
+      return score;
+    }
+
+    function scoreWholePlan(plan, budget) {
+      let score = 100;
+
+      for (let i = 1; i < plan.length; i++) {
+        const overlap = countSharedTags(plan[i].tags, plan[i - 1].tags);
+        score -= overlap * 40;
+        if ((plan[i].cost_band || "") === (plan[i - 1].cost_band || "")) {
+          score -= 4;
+        }
+      }
+
+      const tagCounts = getTagCounts(plan);
+      Object.values(tagCounts).forEach(count => {
+        if (count > 2) score -= (count - 2) * 10;
+      });
+
+      const totalCost = plan.reduce((sum, meal) => sum + Number(meal.estimated_cost || 0), 0);
+
+      if (budget > 0) {
+        const diff = Math.abs(totalCost - budget);
+        score -= diff * 1.8;
+      }
+
+      return score;
+    }
+
+    async function saveWeeklyPlan(plan) {
+      await supabase.from("weekly_plan").delete().eq("week_key", CURRENT_WEEK_KEY);
+
+      const rows = plan.map((meal, index) => ({
+        day_name: DAYS[index],
+        meal_id: meal.id,
+        week_key: CURRENT_WEEK_KEY
+      }));
+
+      if (rows.length) {
+        const { error } = await supabase.from("weekly_plan").insert(rows);
+        if (error) {
+          setStatus(planStatus, error.message);
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    async function generateWeek() {
       if (meals.length < 7) {
         alert("Add at least 7 meals first so the week can be varied properly.");
         return;
       }
 
+      setStatus(planStatus, "Generating...");
       const budget = parseFloat(weeklyBudgetInput.value || "0");
       const tryCount = 300;
       let bestPlan = null;
       let bestScore = -Infinity;
 
       for (let attempt = 0; attempt < tryCount; attempt++) {
-        const pool = shuffle([...meals]);
+        const pool = shuffle(meals);
         const plan = [];
         const usedIds = new Set();
 
@@ -889,133 +1096,40 @@
       }
 
       if (!bestPlan) {
-        alert("Could not build a full week. Add more varied meals and try again.");
+        setStatus(planStatus, "Could not build a full week.");
         return;
       }
 
-      currentPlan = bestPlan;
-      shoppingChecks = {};
-      extraItems = [];
-      save(STORAGE_KEYS.plan, currentPlan);
-      save(STORAGE_KEYS.checks, shoppingChecks);
-      save(STORAGE_KEYS.extras, extraItems);
-      renderPlan();
-      renderShoppingList();
-      renderExtraItems();
+      const ok = await saveWeeklyPlan(bestPlan);
+      if (!ok) return;
+
+      await supabase.from("shopping_checks").delete().eq("week_key", CURRENT_WEEK_KEY);
+      await supabase.from("shopping_extra_items").delete().eq("week_key", CURRENT_WEEK_KEY);
+
+      await loadAllData();
       switchScreen("plan");
-    }
-
-    function scoreMealForPosition(meal, previousMeal, partialPlan, budget) {
-      let score = Math.random() * 10;
-
-      if (!previousMeal) {
-        score += 20;
-      } else {
-        const overlap = countSharedTags(meal.tags, previousMeal.tags);
-        score -= overlap * 35;
-
-        if (meal.costBand === previousMeal.costBand) {
-          score -= 6;
-        }
-      }
-
-      const currentTagCounts = getTagCounts(partialPlan);
-      (meal.tags || []).forEach(tag => {
-        const used = currentTagCounts[tag.toLowerCase()] || 0;
-        score -= used * 12;
-      });
-
-      const currentCostCounts = getCostCounts(partialPlan);
-      const mealCost = meal.costBand || "medium";
-      score -= (currentCostCounts[mealCost] || 0) * 5;
-
-      if (budget > 0) {
-        const currentCost = partialPlan.reduce((sum, item) => sum + Number(item.estimatedCost || 0), 0);
-        const projected = currentCost + Number(meal.estimatedCost || 0);
-        const targetPerMeal = budget / 7;
-
-        if (mealCost === "high" && projected > budget) score -= 25;
-        if (Math.abs(Number(meal.estimatedCost || 0) - targetPerMeal) < targetPerMeal * 0.35) score += 6;
-      }
-
-      return score;
-    }
-
-    function scoreWholePlan(plan, budget) {
-      let score = 100;
-
-      for (let i = 1; i < plan.length; i++) {
-        const overlap = countSharedTags(plan[i].tags, plan[i - 1].tags);
-        score -= overlap * 40;
-        if ((plan[i].costBand || "") === (plan[i - 1].costBand || "")) {
-          score -= 4;
-        }
-      }
-
-      const tagCounts = getTagCounts(plan);
-      Object.values(tagCounts).forEach(count => {
-        if (count > 2) score -= (count - 2) * 10;
-      });
-
-      const totalCost = plan.reduce((sum, meal) => sum + Number(meal.estimatedCost || 0), 0);
-
-      if (budget > 0) {
-        const diff = Math.abs(totalCost - budget);
-        score -= diff * 1.8;
-      }
-
-      return score;
-    }
-
-    function countSharedTags(a = [], b = []) {
-      const setA = new Set((a || []).map(item => item.toLowerCase()));
-      return (b || []).filter(item => setA.has(item.toLowerCase())).length;
-    }
-
-    function getTagCounts(plan) {
-      const counts = {};
-      plan.forEach(meal => {
-        (meal.tags || []).forEach(tag => {
-          const key = tag.toLowerCase();
-          counts[key] = (counts[key] || 0) + 1;
-        });
-      });
-      return counts;
-    }
-
-    function getCostCounts(plan) {
-      const counts = {};
-      plan.forEach(meal => {
-        const key = meal.costBand || "medium";
-        counts[key] = (counts[key] || 0) + 1;
-      });
-      return counts;
+      setStatus(planStatus, "Week generated.");
+      setTimeout(() => setStatus(planStatus, ""), 1500);
     }
 
     document.getElementById("generateWeekBtn").addEventListener("click", generateWeek);
 
-    document.getElementById("clearWeekBtn").addEventListener("click", () => {
-      currentPlan = [];
-      shoppingChecks = {};
-      extraItems = [];
-      save(STORAGE_KEYS.plan, currentPlan);
-      save(STORAGE_KEYS.checks, shoppingChecks);
-      save(STORAGE_KEYS.extras, extraItems);
-      renderPlan();
-      renderShoppingList();
-      renderExtraItems();
+    document.getElementById("clearWeekBtn").addEventListener("click", async () => {
+      await supabase.from("weekly_plan").delete().eq("week_key", CURRENT_WEEK_KEY);
+      await supabase.from("shopping_checks").delete().eq("week_key", CURRENT_WEEK_KEY);
+      await supabase.from("shopping_extra_items").delete().eq("week_key", CURRENT_WEEK_KEY);
+      await loadAllData();
     });
 
-    function moveMeal(index, direction) {
+    async function moveMeal(index, direction) {
       const swapIndex = index + direction;
       if (swapIndex < 0 || swapIndex >= currentPlan.length) return;
       [currentPlan[index], currentPlan[swapIndex]] = [currentPlan[swapIndex], currentPlan[index]];
-      save(STORAGE_KEYS.plan, currentPlan);
-      renderPlan();
-      renderShoppingList();
+      await saveWeeklyPlan(currentPlan);
+      await loadAllData();
     }
 
-    function swapMeal(index) {
+    async function swapMeal(index) {
       const currentMeal = currentPlan[index];
       const previousMeal = currentPlan[index - 1] || null;
       const nextMeal = currentPlan[index + 1] || null;
@@ -1040,9 +1154,8 @@
 
       const replacement = options[Math.floor(Math.random() * options.length)];
       currentPlan[index] = replacement;
-      save(STORAGE_KEYS.plan, currentPlan);
-      renderPlan();
-      renderShoppingList();
+      await saveWeeklyPlan(currentPlan);
+      await loadAllData();
     }
 
     function renderPlan() {
@@ -1057,10 +1170,10 @@
           <div class="day-label">${DAYS[index]}</div>
           <h3>${escapeHtml(meal.title)}</h3>
           <div class="tag-chip-wrap">
-            ${renderCostTag(meal.costBand)}
+            ${renderCostTag(meal.cost_band)}
             ${(meal.tags || []).map(tag => `<span class="tag-chip tag-general">${escapeHtml(tag)}</span>`).join("")}
           </div>
-          <div class="meta-line">Estimated cost: £${Number(meal.estimatedCost || 0).toFixed(2)}</div>
+          <div class="meta-line">Estimated cost: Â£${Number(meal.estimated_cost || 0).toFixed(2)}</div>
           <div class="meta-line">Ingredients: ${(meal.ingredients || []).map(escapeHtml).join(", ")}</div>
           <div class="actions">
             <button type="button" class="btn-ghost" data-move-up="${index}">Move up</button>
@@ -1087,9 +1200,34 @@
 
     function updateSummary() {
       const mealCount = currentPlan.length;
-      const totalCost = currentPlan.reduce((sum, meal) => sum + Number(meal.estimatedCost || 0), 0);
+      const totalCost = currentPlan.reduce((sum, meal) => sum + Number(meal.estimated_cost || 0), 0);
       summaryMealsEl.textContent = `${mealCount} ${mealCount === 1 ? "meal" : "meals"}`;
-      summaryCostEl.textContent = `£${totalCost.toFixed(2)}`;
+      summaryCostEl.textContent = `Â£${totalCost.toFixed(2)}`;
+    }
+
+    async function setCheckState(itemKey, checked) {
+      const { data: existing, error } = await supabase
+        .from("shopping_checks")
+        .select("id")
+        .eq("week_key", CURRENT_WEEK_KEY)
+        .eq("item_key", itemKey)
+        .maybeSingle();
+
+      if (error && !String(error.message || "").toLowerCase().includes("multiple")) {
+        return;
+      }
+
+      if (existing) {
+        await supabase.from("shopping_checks").update({ checked }).eq("id", existing.id);
+      } else {
+        await supabase.from("shopping_checks").insert({
+          item_key: itemKey,
+          checked,
+          week_key: CURRENT_WEEK_KEY
+        });
+      }
+
+      shoppingChecks[itemKey] = checked;
     }
 
     function renderShoppingList() {
@@ -1106,8 +1244,7 @@
           const key = clean.toLowerCase();
           counts[key] = {
             label: clean,
-            count: (counts[key]?.count || 0) + 1,
-            type: "main"
+            count: (counts[key]?.count || 0) + 1
           };
         });
       });
@@ -1119,45 +1256,44 @@
         const checked = !!shoppingChecks[key];
         return `
           <label class="shopping-item ${checked ? "checked" : ""}">
-            <input type="checkbox" data-check-item="${escapeHtmlAttr(key)}" ${checked ? "checked" : ""} />
+            <input type="checkbox" data-check-item="${escapeHtml(key)}" ${checked ? "checked" : ""} />
             <span>${escapeHtml(item.label)}${item.count > 1 ? ` <span class="tiny">(x${item.count})</span>` : ""}</span>
           </label>
         `;
       }).join("");
 
       shoppingListEl.querySelectorAll("[data-check-item]").forEach(input => {
-        input.addEventListener("change", () => {
-          const key = input.dataset.checkItem;
-          shoppingChecks[key] = input.checked;
-          save(STORAGE_KEYS.checks, shoppingChecks);
-          renderShoppingList();
-          renderExtraItems();
+        input.addEventListener("change", async () => {
+          await setCheckState(input.dataset.checkItem, input.checked);
+          await loadAllData();
         });
       });
     }
 
-    function addExtraItem() {
+    async function addExtraItem() {
       const value = normaliseText(extraItemInput.value);
       if (!value) return;
 
-      extraItems.push({
-        id: uid(),
-        label: value
+      const { error } = await supabase.from("shopping_extra_items").insert({
+        label: value,
+        week_key: CURRENT_WEEK_KEY
       });
 
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
       extraItemInput.value = "";
-      save(STORAGE_KEYS.extras, extraItems);
-      renderExtraItems();
+      await loadAllData();
     }
 
     document.getElementById("addExtraItemBtn").addEventListener("click", addExtraItem);
 
-    function deleteExtraItem(id) {
-      extraItems = extraItems.filter(item => item.id !== id);
-      delete shoppingChecks[`extra:${id}`];
-      save(STORAGE_KEYS.extras, extraItems);
-      save(STORAGE_KEYS.checks, shoppingChecks);
-      renderExtraItems();
+    async function deleteExtraItem(id) {
+      await supabase.from("shopping_extra_items").delete().eq("id", id);
+      await supabase.from("shopping_checks").delete().eq("week_key", CURRENT_WEEK_KEY).eq("item_key", `extra:${id}`);
+      await loadAllData();
     }
 
     function renderExtraItems() {
@@ -1171,7 +1307,7 @@
         const checked = !!shoppingChecks[key];
         return `
           <div class="shopping-item ${checked ? "checked" : ""}">
-            <input type="checkbox" data-check-item="${escapeHtmlAttr(key)}" ${checked ? "checked" : ""} />
+            <input type="checkbox" data-check-item="${escapeHtml(key)}" ${checked ? "checked" : ""} />
             <span style="flex:1;">${escapeHtml(item.label)}</span>
             <button type="button" class="btn-danger" data-delete-extra="${item.id}" style="padding:6px 10px; font-size:12px; border-radius:10px;">Delete</button>
           </div>
@@ -1179,134 +1315,94 @@
       }).join("");
 
       extraItemsListEl.querySelectorAll("[data-check-item]").forEach(input => {
-        input.addEventListener("change", () => {
-          const key = input.dataset.checkItem;
-          shoppingChecks[key] = input.checked;
-          save(STORAGE_KEYS.checks, shoppingChecks);
-          renderExtraItems();
+        input.addEventListener("change", async () => {
+          await setCheckState(input.dataset.checkItem, input.checked);
+          await loadAllData();
         });
       });
 
       extraItemsListEl.querySelectorAll("[data-delete-extra]").forEach(btn => {
-        btn.addEventListener("click", () => deleteExtraItem(btn.dataset.deleteExtra));
+        btn.addEventListener("click", async () => {
+          await deleteExtraItem(btn.dataset.deleteExtra);
+        });
       });
     }
 
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    }
-
-    function addExampleMeals() {
+    async function addExampleMeals() {
       const exampleMeals = [
         {
-          id: uid(),
           title: "Spaghetti Bolognese",
-          costBand: "medium",
-          estimatedCost: 8.5,
+          cost_band: "medium",
+          estimated_cost: 8.5,
           tags: ["pasta", "beef"],
           ingredients: ["spaghetti", "mince", "passata", "onion", "garlic"]
         },
         {
-          id: uid(),
           title: "Chicken Fajitas",
-          costBand: "medium",
-          estimatedCost: 9.0,
+          cost_band: "medium",
+          estimated_cost: 9.0,
           tags: ["chicken", "wraps"],
           ingredients: ["wraps", "chicken", "peppers", "onion", "fajita seasoning"]
         },
         {
-          id: uid(),
           title: "Sausage Tray Bake",
-          costBand: "low",
-          estimatedCost: 6.5,
+          cost_band: "low",
+          estimated_cost: 6.5,
           tags: ["tray bake", "sausage"],
           ingredients: ["sausages", "potatoes", "red onion", "peppers"]
         },
         {
-          id: uid(),
           title: "Vegetable Curry",
-          costBand: "low",
-          estimatedCost: 5.8,
+          cost_band: "low",
+          estimated_cost: 5.8,
           tags: ["curry", "vegetarian"],
           ingredients: ["rice", "coconut milk", "curry paste", "chickpeas", "spinach"]
         },
         {
-          id: uid(),
           title: "Salmon Rice Bowls",
-          costBand: "high",
-          estimatedCost: 11.5,
+          cost_band: "high",
+          estimated_cost: 11.5,
           tags: ["fish", "rice"],
           ingredients: ["salmon", "rice", "broccoli", "soy sauce", "spring onions"]
         },
         {
-          id: uid(),
           title: "Chicken Pasta Bake",
-          costBand: "medium",
-          estimatedCost: 8.8,
+          cost_band: "medium",
+          estimated_cost: 8.8,
           tags: ["pasta", "chicken"],
           ingredients: ["pasta", "chicken", "cheese", "passata", "sweetcorn"]
         },
         {
-          id: uid(),
           title: "Beef Chilli",
-          costBand: "medium",
-          estimatedCost: 8.2,
+          cost_band: "medium",
+          estimated_cost: 8.2,
           tags: ["beef", "rice"],
           ingredients: ["mince", "rice", "kidney beans", "tomatoes", "onion"]
         },
         {
-          id: uid(),
           title: "Halloumi Wraps",
-          costBand: "medium",
-          estimatedCost: 7.4,
+          cost_band: "medium",
+          estimated_cost: 7.4,
           tags: ["wraps", "vegetarian"],
           ingredients: ["wraps", "halloumi", "lettuce", "tomatoes", "yoghurt"]
         }
       ];
 
-      meals = exampleMeals;
-      currentPlan = [];
-      shoppingChecks = {};
-      extraItems = [];
-      save(STORAGE_KEYS.meals, meals);
-      save(STORAGE_KEYS.plan, currentPlan);
-      save(STORAGE_KEYS.checks, shoppingChecks);
-      save(STORAGE_KEYS.extras, extraItems);
-      renderMeals();
-      renderPlan();
-      renderShoppingList();
-      renderExtraItems();
-      renderTagSuggestions();
-      clearDraft();
+      const { error } = await supabase.from("meals").insert(exampleMeals);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      await loadAllData();
       alert("Example meals added.");
     }
 
     document.getElementById("exampleMealsBtn").addEventListener("click", addExampleMeals);
 
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function escapeHtmlAttr(value) {
-      return escapeHtml(value);
-    }
-
     renderDraftTags();
     renderDraftIngredients();
-    renderMeals();
-    renderPlan();
-    renderShoppingList();
-    renderExtraItems();
-    renderTagSuggestions();
+    loadAllData();
   </script>
 </body>
 </html>
