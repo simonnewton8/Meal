@@ -1327,82 +1327,81 @@
         });
       });
     }
-
     async function addExampleMeals() {
-      const exampleMeals = [
-        {
-          title: "Spaghetti Bolognese",
-          cost_band: "medium",
-          estimated_cost: 8.5,
-          tags: ["pasta", "beef"],
-          ingredients: ["spaghetti", "mince", "passata", "onion", "garlic"]
-        },
-        {
-          title: "Chicken Fajitas",
-          cost_band: "medium",
-          estimated_cost: 9.0,
-          tags: ["chicken", "wraps"],
-          ingredients: ["wraps", "chicken", "peppers", "onion", "fajita seasoning"]
-        },
-        {
-          title: "Sausage Tray Bake",
-          cost_band: "low",
-          estimated_cost: 6.5,
-          tags: ["tray bake", "sausage"],
-          ingredients: ["sausages", "potatoes", "red onion", "peppers"]
-        },
-        {
-          title: "Vegetable Curry",
-          cost_band: "low",
-          estimated_cost: 5.8,
-          tags: ["curry", "vegetarian"],
-          ingredients: ["rice", "coconut milk", "curry paste", "chickpeas", "spinach"]
-        },
-        {
-          title: "Salmon Rice Bowls",
-          cost_band: "high",
-          estimated_cost: 11.5,
-          tags: ["fish", "rice"],
-          ingredients: ["salmon", "rice", "broccoli", "soy sauce", "spring onions"]
-        },
-        {
-          title: "Chicken Pasta Bake",
-          cost_band: "medium",
-          estimated_cost: 8.8,
-          tags: ["pasta", "chicken"],
-          ingredients: ["pasta", "chicken", "cheese", "passata", "sweetcorn"]
-        },
-        {
-          title: "Beef Chilli",
-          cost_band: "medium",
-          estimated_cost: 8.2,
-          tags: ["beef", "rice"],
-          ingredients: ["mince", "rice", "kidney beans", "tomatoes", "onion"]
-        },
-        {
-          title: "Halloumi Wraps",
-          cost_band: "medium",
-          estimated_cost: 7.4,
-          tags: ["wraps", "vegetarian"],
-          ingredients: ["wraps", "halloumi", "lettuce", "tomatoes", "yoghurt"]
-        }
-      ];
-
-      const { error } = await supabase.from("meals").insert(exampleMeals);
-      if (error) {
-        alert(error.message);
-        return;
-      }
-
-      await loadAllData();
-      alert("Example meals added.");
+  const exampleMeals = [
+    {
+      title: "Spaghetti Bolognese",
+      cost_band: "medium",
+      estimated_cost: 8.5,
+      tags: ["pasta", "beef"],
+      ingredients: ["spaghetti", "mince", "passata", "onion", "garlic"]
+    },
+    {
+      title: "Chicken Fajitas",
+      cost_band: "medium",
+      estimated_cost: 9.0,
+      tags: ["chicken", "wraps"],
+      ingredients: ["wraps", "chicken", "peppers", "onion", "fajita seasoning"]
+    },
+    {
+      title: "Sausage Tray Bake",
+      cost_band: "low",
+      estimated_cost: 6.5,
+      tags: ["tray bake", "sausage"],
+      ingredients: ["sausages", "potatoes", "red onion", "peppers"]
+    },
+    {
+      title: "Vegetable Curry",
+      cost_band: "low",
+      estimated_cost: 5.8,
+      tags: ["curry", "vegetarian"],
+      ingredients: ["rice", "coconut milk", "curry paste", "chickpeas", "spinach"]
+    },
+    {
+      title: "Salmon Rice Bowls",
+      cost_band: "high",
+      estimated_cost: 11.5,
+      tags: ["fish", "rice"],
+      ingredients: ["salmon", "rice", "broccoli", "soy sauce", "spring onions"]
+    },
+    {
+      title: "Chicken Pasta Bake",
+      cost_band: "medium",
+      estimated_cost: 8.8,
+      tags: ["pasta", "chicken"],
+      ingredients: ["pasta", "chicken", "cheese", "passata", "sweetcorn"]
+    },
+    {
+      title: "Beef Chilli",
+      cost_band: "medium",
+      estimated_cost: 8.2,
+      tags: ["beef", "rice"],
+      ingredients: ["mince", "rice", "kidney beans", "tomatoes", "onion"]
+    },
+    {
+      title: "Halloumi Wraps",
+      cost_band: "medium",
+      estimated_cost: 7.4,
+      tags: ["wraps", "vegetarian"],
+      ingredients: ["wraps", "halloumi", "lettuce", "tomatoes", "yoghurt"]
     }
+  ];
 
-    document.getElementById("exampleMealsBtn").addEventListener("click", addExampleMeals);
+  const { error } = await supabase.from("meals").insert(exampleMeals);
+  if (error) {
+    alert(error.message);
+    return;
+  }
 
-    renderDraftTags();
-    renderDraftIngredients();
-    loadAllData();
-  </script>
+  await loadAllData();
+  alert("Example meals added.");
+}
+
+document.getElementById("exampleMealsBtn").addEventListener("click", addExampleMeals);
+
+renderDraftTags();
+renderDraftIngredients();
+loadAllData();
+</script>
 </body>
 </html>
