@@ -1,80 +1,236 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Supabase Test</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-    .card { background: white; padding: 16px; border-radius: 10px; max-width: 520px; margin: 40px auto; }
-    input, button { width: 100%; padding: 12px; margin-top: 10px; box-sizing: border-box; }
-    #msg { margin-top: 12px; white-space: pre-wrap; font-size: 16px; }
-  </style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meal Planner</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body { font-family: Arial; margin:0; background:#f5f5f5;}
+.wrap { max-width:700px; margin:auto; padding:10px;}
+.card { background:white; padding:12px; margin:10px 0; border-radius:10px;}
+input, select, button { width:100%; padding:10px; margin-top:5px;}
+button { border:none; border-radius:8px; cursor:pointer;}
+.tag { display:inline-block; padding:4px 8px; margin:3px; border-radius:999px; font-size:12px; background:#eee;}
+.low { background:#d1fae5;}
+.medium { background:#fef3c7;}
+.high { background:#fee2e2;}
+.nav { display:flex; gap:5px;}
+.nav button { flex:1;}
+.hidden { display:none;}
+.small { font-size:12px;}
+</style>
 </head>
+
 <body>
-  <div class="card">
-    <h2>Supabase Test</h2>
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
-    <button id="loginBtn" type="button">Login</button>
-    <div id="msg">Page loaded.</div>
-  </div>
+<div class="wrap">
 
-  <script>
-    const msg = document.getElementById("msg");
+<div id="loginBox" class="card">
+<h3>Login</h3>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<div id="msg"></div>
+</div>
 
-    msg.textContent += "\nScript started.";
+<div id="app" class="hidden">
 
-    if (!window.supabase) {
-      msg.textContent += "\nSupabase library did NOT load.";
-    } else {
-      msg.textContent += "\nSupabase library loaded.";
-    }
+<div class="card nav">
+<button onclick="show('meals')">Meals</button>
+<button onclick="show('week')">Week</button>
+<button onclick="show('shop')">Shop</button>
+</div>
 
-    const SUPABASE_URL = "https://njhgiitbtvsbudarsmbk.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_AHbuYoScuVzZ6jgAkQMMpg_eZRPn6v0";
+<div id="meals">
 
-    let client = null;
+<div class="card">
+<h3>Add Meal</h3>
+<input id="title" placeholder="Meal name">
+<select id="cost">
+<option value="low">Low</option>
+<option value="medium">Medium</option>
+<option value="high">High</option>
+</select>
 
-    try {
-      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      msg.textContent += "\nClient created.";
-    } catch (err) {
-      msg.textContent += "\nClient creation failed: " + err.message;
-    }
+<input id="tagInput" placeholder="Tag">
+<button onclick="addTag()">Add Tag</button>
+<div id="tags"></div>
 
-    document.getElementById("loginBtn").addEventListener("click", async function () {
-      msg.textContent += "\nLogin button pressed.";
+<input id="ingredientInput" placeholder="Ingredient">
+<button onclick="addIngredient()">Add Ingredient</button>
+<div id="ingredients"></div>
 
-      if (!client) {
-        msg.textContent += "\nNo client available.";
-        return;
-      }
+<button onclick="saveMeal()">Save</button>
+</div>
 
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
+<div class="card">
+<h3>Meals</h3>
+<div id="mealList"></div>
+</div>
 
-      if (!email || !password) {
-        msg.textContent += "\nEnter email and password.";
-        return;
-      }
+</div>
 
-      try {
-        const { data, error } = await client.auth.signInWithPassword({
-          email,
-          password
-        });
+<div id="week" class="hidden">
+<div class="card">
+<button onclick="generateWeek()">Generate Week</button>
+<div id="weekList"></div>
+</div>
+</div>
 
-        if (error) {
-          msg.textContent += "\nLogin failed: " + error.message;
-          return;
-        }
+<div id="shop" class="hidden">
+<div class="card">
+<h3>Shopping List</h3>
+<div id="shopList"></div>
+<input id="extraItem" placeholder="Extra item">
+<button onclick="addExtra()">Add</button>
+<div id="extraList"></div>
+</div>
+</div>
 
-        msg.textContent += "\nLogin worked for: " + (data.user?.email || "unknown user");
-      } catch (err) {
-        msg.textContent += "\nRequest error: " + err.message;
-      }
-    });
-  </script>
+</div>
+</div>
+
+<script>
+const supabase = window.supabase.createClient(
+"https://njhgiitbtvsbudarsmbk.supabase.co",
+"sb_publishable_AHbuYoScuVzZ6jgAkQMMpg_eZRPn6v0"
+);
+
+let tags = [];
+let ingredients = [];
+let meals = [];
+let week = [];
+let extras = [];
+
+function show(s){
+document.getElementById("meals").classList.add("hidden");
+document.getElementById("week").classList.add("hidden");
+document.getElementById("shop").classList.add("hidden");
+document.getElementById(s).classList.remove("hidden");
+}
+
+async function login(){
+const {error} = await supabase.auth.signInWithPassword({
+email: email.value,
+password: password.value
+});
+if(error) return alert(error.message);
+
+loginBox.classList.add("hidden");
+app.classList.remove("hidden");
+loadMeals();
+loadWeek();
+}
+
+function addTag(){
+if(!tagInput.value) return;
+tags.push(tagInput.value);
+tagInput.value="";
+renderTags();
+}
+
+function renderTags(){
+tagsDiv.innerHTML="";
+tags.forEach(t=>tagsDiv.innerHTML+=`<span class="tag">${t}</span>`);
+}
+
+function addIngredient(){
+if(!ingredientInput.value) return;
+ingredients.push(ingredientInput.value);
+ingredientInput.value="";
+renderIngredients();
+}
+
+function renderIngredients(){
+ingredientsDiv.innerHTML="";
+ingredients.forEach(i=>ingredientsDiv.innerHTML+=`<span class="tag">${i}</span>`);
+}
+
+async function saveMeal(){
+await supabase.from("meals").insert({
+title:title.value,
+cost_band:cost.value,
+tags:tags,
+ingredients:ingredients
+});
+title.value="";
+tags=[];
+ingredients=[];
+renderTags();
+renderIngredients();
+loadMeals();
+}
+
+async function loadMeals(){
+const {data}=await supabase.from("meals").select("*");
+meals=data||[];
+renderMeals();
+}
+
+function renderMeals(){
+mealList.innerHTML="";
+meals.forEach(m=>{
+mealList.innerHTML+=`
+<div class="card">
+<b>${m.title}</b><br>
+<span class="tag ${m.cost_band}">${m.cost_band}</span>
+${(m.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")}
+<div class="small">${(m.ingredients||[]).join(", ")}</div>
+</div>`;
+});
+}
+
+function generateWeek(){
+week=[];
+let pool=[...meals];
+
+for(let i=0;i<7;i++){
+let pick=pool[Math.floor(Math.random()*pool.length)];
+week.push(pick);
+pool=pool.filter(m=>m.id!==pick.id);
+}
+saveWeek();
+renderWeek();
+}
+
+async function saveWeek(){
+await supabase.from("week").delete().neq("id",0);
+await supabase.from("week").insert(week);
+}
+
+async function loadWeek(){
+const {data}=await supabase.from("week").select("*");
+week=data||[];
+renderWeek();
+}
+
+function renderWeek(){
+weekList.innerHTML="";
+week.forEach(m=>{
+weekList.innerHTML+=`<div class="card">${m.title}</div>`;
+});
+buildShopping();
+}
+
+function buildShopping(){
+let items=[];
+week.forEach(m=>{
+(m.ingredients||[]).forEach(i=>items.push(i));
+});
+let unique=[...new Set(items)];
+shopList.innerHTML=unique.map(i=>`<div>${i}</div>`).join("");
+}
+
+function addExtra(){
+extras.push(extraItem.value);
+extraItem.value="";
+renderExtras();
+}
+
+function renderExtras(){
+extraList.innerHTML=extras.map(e=>`<div>${e}</div>`).join("");
+}
+</script>
+
 </body>
 </html>
